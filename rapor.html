@@ -32,6 +32,20 @@
       font-weight:bold;
       margin-top:10px;
     }
+
+    /* ✔ Masaüstünde sidebar alanı açılsın */
+    @media(min-width: 900px) {
+      .content-area {
+        margin-left:260px !important;
+      }
+    }
+    /* ✔ Mobilde bozulmayı düzelt */
+    @media(max-width: 900px) {
+      .content-area {
+        margin-left:0 !important;
+        padding-top:70px;
+      }
+    }
   </style>
 </head>
 
@@ -48,7 +62,7 @@
     }
   </script>
 
-  <div class="content-area" style="margin-left:260px; padding:25px;">
+  <div class="content-area" style="padding:25px;">
 
     <h2 style="margin-bottom:20px;">📊 Raporlama Ekranı</h2>
 
@@ -59,8 +73,11 @@
       &nbsp;&nbsp;
       <label><b>Bitiş Tarihi:</b></label>
       <input type="date" id="endDate" />
-      &nbsp;&nbsp;
+
       <button class="btn-primary" onclick="loadReport()">Raporla</button>
+
+      <!-- ✔ Excel Çıktısı Butonu -->
+      <button class="btn-secondary" onclick="downloadExcel()">Excel Çıktısı</button>
     </div>
 
     <!-- Grafik 1 -->
@@ -86,6 +103,7 @@
             <th>No</th>
             <th>İsim</th>
             <th>Tutar</th>
+            <th>Adet</th> <!-- ✔ YENİ EKLENDİ -->
             <th>Durum</th>
             <th>Tarih</th>
             <th>Sipariş Alan Tel</th>
@@ -103,7 +121,6 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcnN4dHBxenF6aGxzaHBtZ290Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyODExMTcsImV4cCI6MjA3Nzg1NzExN30.98oYONSkb8XSDrfGW2FxhFmt2BLB5ZRo3Ho50GhZYgE"
     );
 
-    // Firma bazlı tablo (tasdipli/esin/queen…)
     const firmaName = localStorage.getItem("firma").toLowerCase();
     const TABLE = firmaName + "_siparisler";
 
@@ -138,7 +155,7 @@
       summary.innerHTML = "";
 
       if (!rows || rows.length === 0) {
-        table.innerHTML = `<tr><td colspan="6">Kayıt bulunamadı</td></tr>`;
+        table.innerHTML = `<tr><td colspan="7">Kayıt bulunamadı</td></tr>`;
         return;
       }
 
@@ -154,6 +171,7 @@
             <td>${r.siparis_no}</td>
             <td>${r.ad_soyad}</td>
             <td>${r.toplam_tutar} TL</td>
+            <td>${r.kargo_adet ?? "-"}</td> <!-- ✔ EKLENDİ -->
             <td>${r.kargo_durumu}</td>
             <td>${r.tarih?.substring(0,10)}</td>
             <td>${r.siparis_tel}</td>
@@ -181,13 +199,12 @@
       buildCharts(rows);
     }
 
-
     // ==============================
-    // GRAFİKLER BURADA OLUŞUYOR
+    // GRAFİKLER
     // ==============================
     function buildCharts(rows) {
 
-      // ----- Günlük Sipariş Grafiği -----
+      // Günlük Sipariş
       const dailyCount = {};
       rows.forEach(r => {
         const day = (r.tarih || "").substring(0,10);
@@ -211,7 +228,7 @@
         }
       });
 
-      // ----- Sipariş Alan Telefona Göre Grafik -----
+      // Sipariş Alan Tel
       const sellerCount = {};
       rows.forEach(r => {
         const tel = r.siparis_tel || "Bilinmiyor";
@@ -235,6 +252,27 @@
         }
       });
     }
+
+    // ==============================
+    // ✔ EXCEL ÇIKTISI
+    // ==============================
+    function downloadExcel() {
+      let csv = "No,İsim,Tutar,Adet,Durum,Tarih,Sipariş Alan Tel\n";
+
+      document.querySelectorAll("#reportTable tr").forEach(tr => {
+        const cols = [...tr.querySelectorAll("td")].map(td => td.innerText.replace(",", ""));
+        csv += cols.join(",") + "\n";
+      });
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "rapor.csv";
+      a.click();
+    }
+
   </script>
 
 </body>
