@@ -3,37 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <title>Barkod Yazdır</title>
+
 <style>
   body {
     margin: 0;
-    padding: 20px;
+    padding: 0;
     text-align: center;
-    font-family: Arial, sans-serif;
+    overflow: hidden;
   }
-  img {
-    width: 100%;
-    max-width: 350px;
+
+  /* PNG kırpılmış görüntü alanı */
+  #cropArea {
+    width: 350px;       /* termal için ideal görünüm */
+    height: 350px;      /* kare alan */
+    margin: 20px auto;
+    background-repeat: no-repeat;
+    background-size: cover;   /* ölçeklemeden tam kare doldurur */
+    background-position: center; /* PNG'nin sadece ortasındaki barkod çıkar */
+  }
+
+  @media print {
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    #cropArea {
+      width: 300px;
+      height: 300px;
+      page-break-after: avoid;
+    }
   }
 </style>
+
 </head>
 <body>
 
-<img id="barcodeImg" />
+<div id="cropArea"></div>
 
 <script>
-  // PNG base64 buraya gelir
   window.showBarcode = function(base64){
-    document.getElementById("barcodeImg").src = "data:image/png;base64," + base64;
+    const url = "data:image/png;base64," + base64;
+    document.getElementById("cropArea").style.backgroundImage = `url(${url})`;
 
-    // PNG yüklendikten sonra yazdır ve kapan
-    document.getElementById("barcodeImg").onload = () => {
-      setTimeout(() => {
-        window.print();
+    setTimeout(() => {
+      window.print();
 
-        // Yazdırma popup'ı açılınca bu sayfa otomatik kapanır
-        setTimeout(() => window.close(), 300);
-      }, 200);
-    };
+      // 2. boş sayfa oluşmasın → biraz geç kapatıyoruz
+      setTimeout(() => window.close(), 600);
+    }, 300);
   };
 </script>
 
