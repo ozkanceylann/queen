@@ -3,31 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <title>Barkod Yazdır</title>
-
 <style>
-  body { 
-    font-family: monospace;
+  body {
+    margin: 0;
     padding: 20px;
-    font-size: 14px;
+    font-family: Arial, sans-serif;
+    text-align: center;
   }
-  pre { 
-    white-space: pre-wrap;
+  img {
+    width: 100%;
+    max-width: 350px;
   }
 </style>
-
 </head>
 <body>
 
-<!-- JS buraya ZPL içeriğini yazacak -->
-<pre id="zpl"></pre>
+<img id="barcodeImg" />
 
 <script>
-  // İçerik JS ile yazıldıktan sonra app.js bu fonksiyonu çağırır
-  window.doPrint = function () {
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => window.close(), 300);
-    }, 150);
+  // app.js buraya base64 PNG gönderecek
+  window.showBarcode = function(base64){
+    document.getElementById("barcodeImg").src = "data:image/png;base64," + base64;
+    setTimeout(() => window.print(), 200);
   };
 </script>
 
