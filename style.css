@@ -478,3 +478,135 @@ body.login-page {
   left: 15px;
   z-index: 10000;
 }
+/* ================================
+   1) Bekliyor Butonu
+================================ */
+.btn-waiting {
+  background: #6c757d;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+.btn-waiting:hover {
+  background: #5a6268;
+}
+
+/* ================================
+   2) Geri Butonu
+================================ */
+.btn-back {
+  background: #e9ecef;
+  color: #333;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+.btn-back:hover {
+  background: #d6d6d6;
+}
+
+/* ================================
+   3) Yeni Kapat Butonu (Modal)
+================================ */
+.btn-close {
+  background: #ccc;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  color: #000;
+  font-size: 14px;
+}
+.btn-close:hover {
+  background: #bcbcbc;
+}
+
+/* ================================
+   4) Modal Buton Aralık Ayarı
+================================ */
+.modal-btns button {
+  min-width: 120px;
+}
+
+/* ================================
+   5) Sidebar Yeni Butonlar
+================================ */
+.menu li {
+  transition: .2s;
+}
+
+.menu li#tab_tamamlanan {
+  background:#0d6efd;
+}
+.menu li#tab_sorunlu {
+  background:#d9534f;
+}
+
+.menu li#tab_tamamlanan:hover {
+  background:#0b5ed7;
+}
+.menu li#tab_sorunlu:hover {
+  background:#c9302c;
+}
+
+/* ================================
+   6) Rapor Sayfası Düzenlemeleri
+================================ */
+
+/* masaüstünde sidebar boş alanı açılsın */
+@media (min-width: 900px) {
+  .content-area {
+    margin-left: 260px !important;
+  }
+}
+
+/* mobil bozulma düzelt */
+@media (max-width: 900px) {
+  .content-area {
+    margin-left: 0 !important;
+    padding-top: 70px;
+  }
+}
+
+/* ================================
+   7) Rapor Tablosunda Kolonların Taşmasını Önle
+================================ */
+.orders-table td,
+.orders-table th {
+  white-space: nowrap;
+}
+
+/* mobilde kaydırma */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+/* ================================
+   8) Adet Sütunu Daha Güzel Dursun
+================================ */
+.orders-table td:nth-child(4) {
+  font-weight: bold;
+}
+
+/* ================================
+   9) Grafik Kartları Eşit Hizalama
+================================ */
+canvas {
+  max-width: 100%;
+}
+
+/* ================================
+   10) Gelişmiş Hover Efektleri
+================================ */
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-warning:hover,
+.btn-danger:hover {
+  opacity: .9;
+}
+
