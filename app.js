@@ -224,16 +224,9 @@ function cancelEdit(){ renderDetailsView(); document.getElementById("editButtons
 // Hazırla
 // ==============================
 async function markPrepared(){
-  await db.from(TABLE)
-    .update({kargo_durumu:"Hazırlandı"})
-    .eq("siparis_no", selectedOrder.siparis_no);
-
-  // 👇 ADİSYON FİŞİ YAZDIR (YAZICI A)
-  printSiparis(selectedOrder);
-
-  toast("Sipariş Hazırlandı ve adisyon yazdırılıyor...");
-  closeModal(); 
-  loadOrders(true);
+  await db.from(TABLE).update({kargo_durumu:"Hazırlandı"}).eq("siparis_no", selectedOrder.siparis_no);
+  toast("Sipariş Hazırlandı olarak işaretlendi");
+  closeModal(); loadOrders(true);
 }
 
 // ==============================
@@ -262,92 +255,30 @@ async function sendToCargo(){
     setTimeout(()=>busy.kargola.delete(key), 60000);
   }
 }
-/ ==============================
-// SİPARİS YAZDIRMA
-// ==============================
-function printSiparis(order) {
-  const w = window.open("adisyon_print.html", "_blank", "width=320,height=600");
 
-  // Ürünleri diziye çevir
-  let products = [];
-  try {
-    products = JSON.parse(order.urun_bilgisi);
-  } catch {
-    products = [order.urun_bilgisi];
-  }
-
-  let productRows = "";
-  products.forEach((p, i) => {
-    productRows += `
-      <tr>
-        <td>${i+1}. ${p}</td>
-        <td style="text-align:right;">1</td>
-      </tr>
-    `;
-  });
-
-  const html = `
-    <div class="box">
-      <div class="row"><b>Sipariş No:</b> ${order.siparis_no}</div>
-      <div class="row"><b>İsim:</b> ${order.ad_soyad}</div>
-      <div class="row"><b>Tel:</b> ${order.musteri_tel}</div>
-      <div class="row"><b>Adres:</b> ${order.adres}</div>
-      <div class="row"><b>Şehir/İlçe:</b> ${order.sehir} / ${order.ilce}</div>
-    </div>
-
-    <div class="box">
-      <b>ÜRÜNLER</b>
-      <table>
-        <tr>
-          <th>Ürün</th>
-          <th style="text-align:right;">Adet</th>
-        </tr>
-        ${productRows}
-        <tr class="total-row">
-          <td>Toplam:</td>
-          <td style="text-align:right;">${order.kargo_adet ?? 1}</td>
-        </tr>
-      </table>
-    </div>
-
-    <div class="box">
-      <div class="row"><b>Ödeme:</b> ${order.odeme_sekli}</div>
-      <div class="row"><b>Tutar:</b> ${order.toplam_tutar} TL</div>
-      <div class="row"><b>Tarih:</b> ${new Date().toLocaleString("tr-TR")}</div>
-    </div>
-  `;
-
-  w.onload = () => {
-    w.document.getElementById("content").innerHTML = html;
-
-    if (typeof w.doPrint === "function") {
-      w.doPrint();
-    }
-  };
-}
 // ==============================
 // Barkod
 // ==============================
-function printBarcode(){
-  const base64 = selectedOrder.zpl_base64;
+async function printBarcode(){
+  const ok = await confirmModal({
+    title: "Barkod Kes",
+    text: "Barkod sadece bir kez yazdırılabilir. Lütfen yazıcının açık olduğunu kontrol edin.",
+    confirmText: "Evet, Yazdır", cancelText: "İptal"
+  });
+  if(!ok) return;
 
-  if (!base64) {
-    toast("ZPL barkodu bulunamadı!");
-    return;
+  const key = selectedOrder.siparis_no;
+  if(busy.barkod.has(key)){ toast("Bu sipariş için barkod isteği zaten aktif."); return; }
+  busy.barkod.add(key);
+
+  try{
+    await fetch(WH_BARKOD, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(selectedOrder) });
+    toast("Barkod isteği gönderildi.");
+  }catch(e){
+    toast("Barkod gönderiminde hata oluştu");
+  }finally{
+    setTimeout(()=>busy.barkod.delete(key), 20000);
   }
-
-  const zpl = atob(base64); // Base64 → ZPL decode
-
-  const w = window.open("barkod_print.html", "_blank", "width=320,height=600");
-
-  w.onload = () => {
-    w.document.getElementById("zpl").innerText = zpl;
-
-    // barkod_print.html içindeki window.doPrint fonksiyonunu tetikle
-    if (typeof w.doPrint === "function") {
-      w.doPrint();
-    }
-  };
 }
 
 // ==============================
