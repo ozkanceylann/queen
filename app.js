@@ -228,10 +228,11 @@ async function markPrepared(){
     .update({kargo_durumu:"Hazırlandı"})
     .eq("siparis_no", selectedOrder.siparis_no);
 
-  printSiparis(selectedOrder);   // A yazıcısı
+  // 👇 ADİSYON FİŞİ YAZDIR (YAZICI A)
+  printSiparis(selectedOrder);
 
-  toast("Sipariş Hazırlandı ve Yazdırılıyor...");
-  closeModal();
+  toast("Sipariş Hazırlandı ve adisyon yazdırılıyor...");
+  closeModal(); 
   loadOrders(true);
 }
 
@@ -267,7 +268,7 @@ async function sendToCargo(){
 function printSiparis(order) {
   const w = window.open("adisyon_print.html", "_blank", "width=320,height=600");
 
-  // Ürünler JSON ise listeye dönüştür
+  // Ürünleri diziye çevir
   let products = [];
   try {
     products = JSON.parse(order.urun_bilgisi);
@@ -318,10 +319,12 @@ function printSiparis(order) {
 
   w.onload = () => {
     w.document.getElementById("content").innerHTML = html;
-    w.doPrint();
+
+    if (typeof w.doPrint === "function") {
+      w.doPrint();
+    }
   };
 }
-
 // ==============================
 // Barkod
 // ==============================
@@ -333,16 +336,19 @@ function printBarcode(){
     return;
   }
 
-  const zpl = atob(base64);  // Base64 → ZPL
+  const zpl = atob(base64); // Base64 → ZPL decode
 
   const w = window.open("barkod_print.html", "_blank", "width=320,height=600");
 
   w.onload = () => {
     w.document.getElementById("zpl").innerText = zpl;
-    w.doPrint();
+
+    // barkod_print.html içindeki window.doPrint fonksiyonunu tetikle
+    if (typeof w.doPrint === "function") {
+      w.doPrint();
+    }
   };
 }
-
 
 // ==============================
 // İptal
