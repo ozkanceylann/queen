@@ -398,7 +398,7 @@ function clearSearch(){ document.getElementById("searchInput").value=""; loadOrd
 // Mobile menu
 // ==============================
 function toggleMenu(){ document.querySelector(".sidebar").classList.toggle("open"); }
-
+}
 // Sidebar dışına tıklayınca menüyü kapat
 document.addEventListener("click", function(e) {
   const sidebar = document.querySelector(".sidebar");
