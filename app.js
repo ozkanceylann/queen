@@ -67,7 +67,10 @@ async function loadOrders(reset=false){
   if(currentTab==="bekleyen")   q = q.eq("kargo_durumu","Bekliyor");
   if(currentTab==="hazirlandi") q = q.eq("kargo_durumu","Hazırlandı");
   if(currentTab==="kargolandi") q = q.eq("kargo_durumu","Kargolandı");
+  if (currentTab === "tamamlandi") q = q.eq("kargo_durumu", "Tamamlandı");
+  if (currentTab === "sorunlu") q = q.eq("kargo_durumu", "Sorunlu");
   if(currentTab==="iptal")      q = q.eq("kargo_durumu","İptal");
+
 
   q = q.order("siparis_no",{ascending:false}).range(0, currentPage*20-1);
 
@@ -125,7 +128,8 @@ function renderDetailsView(){
     <p><b>Sipariş Alan Tel:</b> ${d.siparis_tel}</p>
     <p><b>Müşteri Tel:</b> ${d.musteri_tel}</p>
     <p><b>Adres:</b> ${d.adres}</p>
-    <p><b>Şehir / İlçe:</b> ${d.sehir} / ${d.ilce}</p>
+    <p><b>Şehir / İlçe:</b> ${d.sehir} / ${d.ilce}<br>
+    <small>Kodlar: ${d.sehir_kodu ?? "-"} / ${d.ilce_kodu ?? "-"}</small></p>
     <p><b>Ürün:</b> ${parseProduct(d.urun_bilgisi)}</p>
     <p><b>Adet:</b> ${d.kargo_adet ?? "-"}</p>
     <p><b>KG:</b> ${d.kargo_kg ?? "-"}</p>
@@ -361,6 +365,23 @@ async function confirmCancel(){
   toast("Sipariş iptal edildi");
   closeModal(); loadOrders(true);
 }
+// ==============================
+// BEKLİYOR
+// ==============================
+
+
+function setWaiting() {
+  if (!selectedOrder) return;
+  db.from(TABLE)
+    .update({ kargo_durumu: "Bekliyor" })
+    .eq("siparis_no", selectedOrder.siparis_no)
+    .then(() => {
+      toast("Sipariş Bekliyor durumuna alındı");
+      closeModal();
+      loadOrders(true);
+    });
+}
+
 
 // ==============================
 // Restore
