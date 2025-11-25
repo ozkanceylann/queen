@@ -7,8 +7,8 @@
   body {
     margin: 0;
     padding: 20px;
-    font-family: Arial, sans-serif;
     text-align: center;
+    font-family: Arial, sans-serif;
   }
   img {
     width: 100%;
@@ -21,10 +21,19 @@
 <img id="barcodeImg" />
 
 <script>
-  // app.js buraya base64 PNG gönderecek
+  // PNG base64 buraya gelir
   window.showBarcode = function(base64){
     document.getElementById("barcodeImg").src = "data:image/png;base64," + base64;
-    setTimeout(() => window.print(), 200);
+
+    // PNG yüklendikten sonra yazdır ve kapan
+    document.getElementById("barcodeImg").onload = () => {
+      setTimeout(() => {
+        window.print();
+
+        // Yazdırma popup'ı açılınca bu sayfa otomatik kapanır
+        setTimeout(() => window.close(), 300);
+      }, 200);
+    };
   };
 </script>
 
