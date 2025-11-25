@@ -51,6 +51,33 @@
 
 <body>
 
+  <!-- MOBILE MENU -->
+<div class="mobile-menu-btn" onclick="toggleMenu()">☰</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+
+  <div class="sidebar-header">
+    <img src="queen_logo.png" class="sidebar-logo" alt="QUEEN Logo" />
+    <div class="sidebar-title">QUEEN<br/>Sipariş Takip Sistemi</div>
+  </div>
+
+  <ul class="menu">
+    <li onclick="window.location='index.html'">Bekleyen</li>
+    <li onclick="window.location='index.html#hazirlandi'">Hazırlandı</li>
+    <li onclick="window.location='index.html#kargolandi'">Kargolandı</li>
+    <li onclick="window.location='index.html#tamamlanan'">Tamamlananlar</li>
+    <li onclick="window.location='index.html#sorunlu'">Sorunlu Gönderiler</li>
+    <li onclick="window.location='index.html#iptal'">İptal</li>
+
+    <!-- ✔ Raporlar aktif olduğu için bu özel olarak yeşil yapıldı -->
+    <li class="active">Raporlar</li>
+  </ul>
+
+  <button class="btn-danger" style="margin-top:20px" onclick="logout()">Çıkış Yap</button>
+
+</aside>
+
   <!-- Güvenlik -->
   <script>
     const firma = localStorage.getItem("firma");
