@@ -330,26 +330,14 @@ function printSiparis(order) {
 // Barkod
 // ==============================
 function printBarcode(){
-  const base64 = selectedOrder.zpl_base64;
-
-  if (!base64) {
-    toast("ZPL barkodu bulunamadı!");
-    return;
-  }
-
-  const zpl = atob(base64); // Base64 → ZPL decode
-
-  const w = window.open("barkod_print.html", "_blank", "width=320,height=600");
+  const b64 = selectedOrder.zpl_base64; // PNG Base64
+  const w = window.open("barkod_print.html", "_blank");
 
   w.onload = () => {
-    w.document.getElementById("zpl").innerText = zpl;
-
-    // barkod_print.html içindeki window.doPrint fonksiyonunu tetikle
-    if (typeof w.doPrint === "function") {
-      w.doPrint();
-    }
+    w.showBarcode(b64);
   };
 }
+
 
 // ==============================
 // İptal
