@@ -145,6 +145,8 @@ function renderDetailsView(){
   document.getElementById("btnPrepare").style.display = d.kargo_durumu==="Bekliyor"   ? "inline-block":"none";
   document.getElementById("btnCargo").style.display   = d.kargo_durumu==="Hazırlandı" ? "inline-block":"none";
   document.getElementById("btnBarcode").style.display = isKargolandi ? "inline-block":"none";
+  document.getElementById("btnWaiting").style.display = d.kargo_durumu !== "Bekliyor" ? "inline-block" : "none";
+ 
 
   const editBtn = document.querySelector("#actionButtons .btn-warning");
   if(editBtn){ editBtn.style.display = isKargolandi ? "none" : "inline-block"; }
