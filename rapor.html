@@ -33,13 +33,12 @@
       margin-top:10px;
     }
 
-    /* ✔ Masaüstünde sidebar alanı açılsın */
     @media(min-width: 900px) {
       .content-area {
         margin-left:260px !important;
       }
     }
-    /* ✔ Mobilde bozulmayı düzelt */
+
     @media(max-width: 900px) {
       .content-area {
         margin-left:0 !important;
@@ -52,43 +51,42 @@
 <body>
 
   <!-- MOBILE MENU -->
-<div class="mobile-menu-btn" onclick="toggleMenu()">☰</div>
+  <div class="mobile-menu-btn" onclick="toggleMenu()">☰</div>
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
 
-  <div class="sidebar-header">
-    <img src="queen_logo.png" class="sidebar-logo" alt="QUEEN Logo" />
-    <div class="sidebar-title">QUEEN<br/>Sipariş Takip Sistemi</div>
-  </div>
+    <div class="sidebar-header">
+      <img src="queen_logo.png" class="sidebar-logo" alt="QUEEN Logo" />
+      <div class="sidebar-title">QUEEN<br/>Sipariş Takip Sistemi</div>
+    </div>
 
-  <ul class="menu">
-    <li onclick="window.location='index.html'">Bekleyen</li>
-    <li onclick="window.location='index.html#hazirlandi'">Hazırlandı</li>
-    <li onclick="window.location='index.html#kargolandi'">Kargolandı</li>
-    <li onclick="window.location='index.html#tamamlanan'">Tamamlananlar</li>
-    <li onclick="window.location='index.html#sorunlu'">Sorunlu Gönderiler</li>
-    <li onclick="window.location='index.html#iptal'">İptal</li>
+    <ul class="menu">
+      <li onclick="window.location='index.html'">Bekleyen</li>
+      <li onclick="window.location='index.html#hazirlandi'">Hazırlandı</li>
+      <li onclick="window.location='index.html#kargolandi'">Kargolandı</li>
+      <li onclick="window.location='index.html#tamamlanan'">Tamamlananlar</li>
+      <li onclick="window.location='index.html#sorunlu'">Sorunlu Gönderiler</li>
+      <li onclick="window.location='index.html#iptal'">İptal</li>
+      <li class="active">Raporlar</li>
+    </ul>
 
-    <!-- ✔ Raporlar aktif olduğu için bu özel olarak yeşil yapıldı -->
-    <li class="active">Raporlar</li>
-  </ul>
+    <button class="btn-danger" style="margin-top:20px" onclick="logout()">Çıkış Yap</button>
 
-  <button class="btn-danger" style="margin-top:20px" onclick="logout()">Çıkış Yap</button>
+  </aside>
 
-</aside>
-
-  <!-- Güvenlik -->
+  <!-- MOBILE MENU SCRIPT (ZORUNLU) -->
   <script>
-    const firma = localStorage.getItem("firma");
-    const rol = localStorage.getItem("rol");
-    const session = localStorage.getItem("session");
-
-    if (!session || !firma) {
-      window.location.href = "login.html";
+    function toggleMenu(){
+      document.querySelector(".sidebar").classList.toggle("open");
+    }
+    function logout(){
+      localStorage.clear();
+      window.location = "login.html";
     }
   </script>
 
+  <!-- ANA İÇERİK -->
   <div class="content-area" style="padding:25px;">
 
     <h2 style="margin-bottom:20px;">📊 Raporlama Ekranı</h2>
@@ -103,7 +101,7 @@
 
       <button class="btn-primary" onclick="loadReport()">Raporla</button>
 
-      <!-- ✔ Excel Çıktısı Butonu -->
+      <!-- EXCEL ÇIKTISI -->
       <button class="btn-secondary" onclick="downloadExcel()">Excel Çıktısı</button>
     </div>
 
@@ -130,7 +128,7 @@
             <th>No</th>
             <th>İsim</th>
             <th>Tutar</th>
-            <th>Adet</th> <!-- ✔ YENİ EKLENDİ -->
+            <th>Adet</th>
             <th>Durum</th>
             <th>Tarih</th>
             <th>Sipariş Alan Tel</th>
@@ -198,7 +196,7 @@
             <td>${r.siparis_no}</td>
             <td>${r.ad_soyad}</td>
             <td>${r.toplam_tutar} TL</td>
-            <td>${r.kargo_adet ?? "-"}</td> <!-- ✔ EKLENDİ -->
+            <td>${r.kargo_adet ?? "-"}</td>
             <td>${r.kargo_durumu}</td>
             <td>${r.tarih?.substring(0,10)}</td>
             <td>${r.siparis_tel}</td>
@@ -226,12 +224,8 @@
       buildCharts(rows);
     }
 
-    // ==============================
-    // GRAFİKLER
-    // ==============================
     function buildCharts(rows) {
 
-      // Günlük Sipariş
       const dailyCount = {};
       rows.forEach(r => {
         const day = (r.tarih || "").substring(0,10);
@@ -240,7 +234,7 @@
       });
 
       const dailyLabels = Object.keys(dailyCount);
-      const dailyValues = Object.values(dailyCount);
+      const dailyValues = Object.keys(dailyCount).map(k => dailyCount[k]);
 
       if (chart1) chart1.destroy();
       chart1 = new Chart(document.getElementById("dailyChart"), {
@@ -255,12 +249,10 @@
         }
       });
 
-      // Sipariş Alan Tel
       const sellerCount = {};
       rows.forEach(r => {
         const tel = r.siparis_tel || "Bilinmiyor";
-        if (!sellerCount[tel]) sellerCount[tel] = 0;
-        sellerCount[tel]++;
+        sellerCount[tel] = (sellerCount[tel] || 0) + 1;
       });
 
       const sellerLabels = Object.keys(sellerCount);
@@ -280,9 +272,6 @@
       });
     }
 
-    // ==============================
-    // ✔ EXCEL ÇIKTISI
-    // ==============================
     function downloadExcel() {
       let csv = "No,İsim,Tutar,Adet,Durum,Tarih,Sipariş Alan Tel\n";
 
