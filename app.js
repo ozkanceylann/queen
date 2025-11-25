@@ -145,7 +145,7 @@ function renderDetailsView(){
   document.getElementById("btnPrepare").style.display = d.kargo_durumu==="Bekliyor"   ? "inline-block":"none";
   document.getElementById("btnCargo").style.display   = d.kargo_durumu==="Hazırlandı" ? "inline-block":"none";
   document.getElementById("btnBarcode").style.display = isKargolandi ? "inline-block":"none";
-  document.getElementById("btnWaiting").style.display = d.kargo_durumu !== "Bekliyor" ? "inline-block" : "none";
+  document.getElementById("btnWaiting").style.display = (d.kargo_durumu !== "Bekliyor" && d.kargo_durumu !== "Kargolandı") ? "inline-block":"none";
  
 
   const editBtn = document.querySelector("#actionButtons .btn-warning");
@@ -349,10 +349,54 @@ function printBarcode(){
 // İptal
 // ==============================
 function openCancelForm(){
+
+  // Eğer sipariş KARGOLANDI ise özel popup aç
+  if (selectedOrder.kargo_durumu === "Kargolandı") {
+
+    const wrap = document.createElement("div");
+    wrap.className = "alert-backdrop";
+
+    wrap.innerHTML = `
+      <div class="alert-card" style="max-width:600px;">
+        <div class="alert-title">Kargolanmış Siparişi İptal Et</div>
+
+        <div class="alert-text" style="margin-bottom: 15px;">
+          Bu sipariş <b>kargo firmasına gönderilmiş</b> durumda.<br>
+          İptal işlemi sonucunda kargo firması tarafından <b>ek ücretler</b> talep edilebilir.
+        </div>
+
+        <b>İptal Nedeni (zorunlu)</b>
+        <textarea id="iptalNedeniKargo" style="width:100%;height:90px;margin-top:10px;"
+          placeholder="Neden iptal ediliyor?"></textarea>
+
+        <div class="alert-actions" style="margin-top:20px;display:flex;justify-content:space-between;">
+          <button class="btn-brand" id="iptalGonder">İptal Et</button>
+          <button class="btn-ghost" id="iptalVazgec">Vazgeç</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("alertRoot").appendChild(wrap);
+
+    wrap.querySelector("#iptalVazgec").onclick = () => wrap.remove();
+
+    wrap.querySelector("#iptalGonder").onclick = () => {
+      const reason = document.getElementById("iptalNedeniKargo").value.trim();
+      if (!reason) return toast("İptal nedeni gerekli.");
+
+      wrap.remove();
+      confirmCancelKargolu(reason);
+    };
+
+    return;
+  }
+
+  // Normal iptal formu
   document.getElementById("cancelForm").style.display="block";
   document.getElementById("actionButtons").style.display="none";
   document.getElementById("editButtons").style.display="none";
 }
+
 function cancelCancelForm(){
   document.getElementById("cancelForm").style.display="none";
   document.getElementById("actionButtons").style.display="flex";
@@ -383,6 +427,32 @@ function setWaiting() {
       loadOrders(true);
     });
 }
+// ==============================
+// KARGOLANMIŞ İPTAL ONAY
+// ==============================
+
+async function confirmCancelKargolu(reason) {
+
+  await fetch(WH_IPTAL, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ ...selectedOrder, reason })
+  });
+
+  await db
+    .from(TABLE)
+    .update({
+      kargo_durumu: "İptal",
+      iptal_nedeni: reason,
+      iptal_tarihi: new Date().toISOString()
+    })
+    .eq("siparis_no", selectedOrder.siparis_no);
+
+  toast("Kargolanmış sipariş iptal edildi");
+  closeModal();
+  loadOrders(true);
+}
+
 
 
 // ==============================
