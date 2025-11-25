@@ -399,6 +399,22 @@ function clearSearch(){ document.getElementById("searchInput").value=""; loadOrd
 // ==============================
 function toggleMenu(){ document.querySelector(".sidebar").classList.toggle("open"); }
 
+// Sidebar dışına tıklayınca menüyü kapat
+document.addEventListener("click", function(e) {
+  const sidebar = document.querySelector(".sidebar");
+  const menuBtn = document.querySelector(".mobile-menu-btn");
+
+  // Menü açık değilse işlem yapma
+  if (!sidebar.classList.contains("open")) return;
+
+  // Sidebar'a veya menü butonuna tıklandıysa kapatma
+  if (sidebar.contains(e.target) || menuBtn.contains(e.target)) return;
+
+  // Diğer her tıklamada sidebar'ı kapat
+  sidebar.classList.remove("open");
+});
+
+
 // ==============================
 // Init
 // ==============================
