@@ -2,71 +2,60 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>TAŞDİPLİ SİPARİŞ</title>
+<title>ADİSYON</title>
 
 <style>
 
-/* --- TERMAL 80mm için gerçek genişlik --- */
+/* 80mm termal fiş boyutu */
 @page {
-  size: 80mm auto;           /* 80mm fiş genişliği */
-  margin: 0;                 /* 0 kenar boşluğu */
+  size: 80mm auto;
+  margin: 0;
 }
 
 html, body {
   width: 80mm;
   margin: 0;
-  padding: 0 4px;            /* sağ/sol 2mm gibi çok ufak boşluk */
+  padding: 0 4px;
   font-family: Arial, sans-serif;
   font-size: 12px;
   line-height: 1.2;
 }
 
-/* Logo */
+/* LOGO */
 .logo {
   text-align: center;
   margin: 4px 0;
 }
-
 .logo img {
   width: 110px;
   height: auto;
 }
 
-/* Başlık */
+/* BAŞLIK */
 h2 {
   text-align: center;
   font-size: 13px;
   margin: 4px 0;
 }
 
-/* Çizgi */
-.line {
-  border-bottom: 1px dashed #000;
-  margin: 4px 0;
-}
-
-/* Satır */
-.row { margin: 2px 0; }
-
-/* Kutulu alan */
+/* KUTULAR */
 .box {
   border: 1px solid #000;
   padding: 6px;
   margin: 4px 0;
 }
 
-/* Ürün listesi */
+.row { margin: 2px 0; }
+
+/* ÜRÜN TABLOSU */
 table {
   width: 100%;
   border-collapse: collapse;
 }
-
 table th, table td {
   padding: 3px 0;
   border-bottom: 1px dashed #000;
 }
-
-/* Toplam satırı */
 .total-row td {
   font-weight: bold;
   border-top: 1px dashed #000;
@@ -78,20 +67,20 @@ table th, table td {
 <body>
 
 <div class="logo">
-  <img src="tasdipli_logo.png">
+  <img src="queen_logo.png">  <!-- QUEEN ve ESİN’de değiştirilecek -->
 </div>
 
-<h2>TAŞDİPLİ SİPARİŞ</h2>
+<h2>ADİSYON</h2>
 
 <div id="content"></div>
 
 <script>
-  window.doPrint = function () {
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => window.close(), 300);
-    }, 150);
-  };
+window.doPrint = function () {
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => window.close(), 300);
+  }, 150);
+};
 </script>
 
 </body>
