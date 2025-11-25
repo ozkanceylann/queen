@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>TAŞDİPLİ SİPARİŞ</title>
+
+<style>
+
+/* --- TERMAL 80mm için gerçek genişlik --- */
+@page {
+  size: 80mm auto;           /* 80mm fiş genişliği */
+  margin: 0;                 /* 0 kenar boşluğu */
+}
+
+html, body {
+  width: 80mm;
+  margin: 0;
+  padding: 0 4px;            /* sağ/sol 2mm gibi çok ufak boşluk */
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+/* Logo */
+.logo {
+  text-align: center;
+  margin: 4px 0;
+}
+
+.logo img {
+  width: 110px;
+  height: auto;
+}
+
+/* Başlık */
+h2 {
+  text-align: center;
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+/* Çizgi */
+.line {
+  border-bottom: 1px dashed #000;
+  margin: 4px 0;
+}
+
+/* Satır */
+.row { margin: 2px 0; }
+
+/* Kutulu alan */
+.box {
+  border: 1px solid #000;
+  padding: 6px;
+  margin: 4px 0;
+}
+
+/* Ürün listesi */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th, table td {
+  padding: 3px 0;
+  border-bottom: 1px dashed #000;
+}
+
+/* Toplam satırı */
+.total-row td {
+  font-weight: bold;
+  border-top: 1px dashed #000;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="logo">
+  <img src="tasdipli_logo.png">
+</div>
+
+<h2>TAŞDİPLİ SİPARİŞ</h2>
+
+<div id="content"></div>
+
+<script>
+  window.doPrint = function () {
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => window.close(), 300);
+    }, 150);
+  };
+</script>
+
+</body>
+</html>

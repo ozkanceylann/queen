@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Barkod Yazdır</title>
+
+<style>
+  body { 
+    font-family: monospace;
+    padding: 20px;
+    font-size: 14px;
+  }
+  pre { 
+    white-space: pre-wrap;
+  }
+</style>
+
+</head>
+<body>
+
+<!-- JS buraya ZPL içeriğini yazacak -->
+<pre id="zpl"></pre>
+
+<script>
+  // İçerik JS ile yazıldıktan sonra app.js bu fonksiyonu çağırır
+  window.doPrint = function () {
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => window.close(), 300);
+    }, 150);
+  };
+</script>
+
+</body>
+</html>
