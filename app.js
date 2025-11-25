@@ -313,7 +313,8 @@ function printSiparis(order) {
       <div class="row"><b>Ödeme:</b> ${order.odeme_sekli}</div>
       <div class="row"><b>Tutar:</b> ${order.toplam_tutar} TL</div>
       <div class="row"><b>Tarih:</b> ${new Date().toLocaleString("tr-TR")}</div>
-    </div>
+      <div class="row"><b>Not:</b> ${order.notlar || "-"}</div>
+      </div>
   `;
 
   w.onload = () => {
