@@ -494,21 +494,6 @@ body.login-page {
   background: #5a6268;
 }
 
-/* ================================
-   2) Geri Butonu
-================================ */
-.btn-back {
-  background: #e9ecef;
-  color: #333;
-  padding: 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-}
-.btn-back:hover {
-  background: #d6d6d6;
-}
 
 /* ================================
    3) Yeni Kapat Butonu (Modal)
