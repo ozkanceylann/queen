@@ -517,6 +517,24 @@ body.login-page {
 .modal-btns button {
   min-width: 120px;
 }
+/* Üst satırı yatay diz */
+.modal-btns .top-row {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+}
+
+/* Üst satırdaki butonlar eşit genişlikte olsun */
+.modal-btns .top-row button {
+  flex: 1;
+}
+
+/* İptal Et zaten tam geniş, sadece margin ekliyoruz */
+.modal-btns .full-width {
+  width: 100%;
+  margin-top: 10px;
+}
+
 
 /* ================================
    5) Sidebar Yeni Butonlar
