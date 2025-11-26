@@ -525,14 +525,14 @@ body.login-page {
   transition: .2s;
 }
 
-.menu li#tab_tamamlanan {
+.menu li#tab_tamamlandi {
   background:#0d6efd;
 }
 .menu li#tab_sorunlu {
   background:#d9534f;
 }
 
-.menu li#tab_tamamlanan:hover {
+.menu li#tab_tamamlandi:hover {
   background:#0b5ed7;
 }
 .menu li#tab_sorunlu:hover {
