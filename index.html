@@ -9,6 +9,22 @@
   <link rel="stylesheet" href="style.css" />
 
   <style>
+    /* Yeni ufak buton (detaylarda Şehir/İlçe kod sorgu için) */
+    .btn-mini {
+      display: inline-block;
+      padding: 4px 8px;
+      font-size: 12px;
+      line-height: 1;
+      border-radius: 6px;
+      border: none;
+      background: #0d6efd;
+      color: #fff;
+      cursor: pointer;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .btn-mini:hover { opacity: .9; }
+
     /* Yeni butonlar */
     .btn-waiting {
       background: #6c757d;
@@ -94,20 +110,20 @@
 
     <!-- ORDERS TABLE -->
     <div class="table-wrapper">
-    <table class="orders-table">
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>İsim</th>
-          <th>Ürün</th>
-          <th>Tutar</th>
-          <th>Durum</th>
-          <th>Kargo Kod</th>
-          <th>Aç</th>
-        </tr>
-      </thead>
-      <tbody id="ordersBody"></tbody>
-    </table>
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>İsim</th>
+            <th>Ürün</th>
+            <th>Tutar</th>
+            <th>Durum</th> <!-- Kargolandı tabında burada shipmentStatus gösterilecek -->
+            <th>Kargo Kod</th>
+            <th>Aç / Sorgula</th> <!-- Kargolandı tabında "Sorgula" butonu gösterilecek -->
+          </tr>
+        </thead>
+        <tbody id="ordersBody"></tbody>
+      </table>
     </div>
     <button id="loadMoreBtn" class="btn-load-more" onclick="loadMore()">Daha Fazla Yükle</button>
   </main>
@@ -119,19 +135,30 @@
 
       <h2>Sipariş Detayı</h2>
       <div id="orderDetails"></div>
+      <!--
+        orderDetails içeriği JS ile dolduruluyor.
+        Şehir / İlçe satırına şu şekilde küçük bir 'Sor' butonu eklenecek (JS tarafında):
+
+        <p><b>Şehir / İlçe:</b> ... 
+          <button class="btn-mini" onclick="queryCityDistrictCodes()">Sor</button>
+          <br><small>Kodlar: ...</small>
+        </p>
+
+        queryCityDistrictCodes() fonksiyonu app.js’de
+        https://n8n.ozkanceylan.uk/webhook/sehir_ilce_kodu_sor
+        webhook’una POST atacak.
+      -->
 
       <!-- ACTION BUTTONS -->
-
       <div id="actionButtons" class="modal-btns">
-
-
         <!-- Hazırla - Kargola - Bekliyor - Barkod -->
         <button id="btnPrepare" class="btn-primary" onclick="markPrepared()">Hazırla</button>
         <button id="btnCargo" class="btn-secondary" onclick="sendToCargo()">Kargola</button>
 
-        <!-- ✔ Yeni Bekliyor Butonu -->
+        <!-- ✔ Bekliyor Butonu -->
         <button id="btnWaiting" class="btn-waiting" onclick="setWaiting()">Bekliyor</button>
 
+        <!-- Kargolandı tabında barkod kes -->
         <button id="btnBarcode" class="btn-primary" onclick="printBarcode()" style="display:none;">Barkod Kes</button>
 
         <button class="btn-warning" onclick="enterEditMode()">Düzenle</button>
@@ -139,7 +166,6 @@
 
         <!-- ✔ Kapat Butonunu düzelttik -->
         <button class="btn-close" onclick="closeModal()">Kapat</button>
-
       </div>
 
       <!-- EDIT BUTTONS -->
@@ -170,11 +196,14 @@
   <!-- ALERT ROOT -->
   <div id="alertRoot"></div>
 
+  <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Uygulama JS -->
   <script src="app.js"></script>
 
   <script>
-    /* ✔ Bekliyor butonunun işlevi */
+    /* ✔ Bekliyor butonunun işlevi (mevcut davranış korunuyor) */
     function setWaiting() {
       if (!selectedOrder) return;
       db.from("queen_siparisler")
