@@ -92,91 +92,54 @@
       <button class="btn-clear" onclick="clearSearch()">Temizle</button>
     </div>
 
-    <!-- ORDERS TABLE -->
-    <div class="table-wrapper">
-    <table class="orders-table">
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>İsim</th>
-          <th>Ürün</th>
-          <th>Tutar</th>
-          <th>Durum</th>
-          <th>Kargo Kod</th>
-          <th>Aç</th>
-        </tr>
-      </thead>
-      <tbody id="ordersBody"></tbody>
-    </table>
-    </div>
-    <button id="loadMoreBtn" class="btn-load-more" onclick="loadMore()">Daha Fazla Yükle</button>
-  </main>
+<!-- ORDER MODAL -->
+<div id="orderModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">&times;</span>
 
-  <!-- ORDER MODAL -->
-  <div id="orderModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal()">&times;</span>
+    <h2>Sipariş Detayı</h2>
+    <div id="orderDetails"></div>
 
-      <h2>Sipariş Detayı</h2>
-      <div id="orderDetails"></div>
+    <!-- === ACTION BUTTONS (NORMAL MOD) === -->
+    <div id="actionButtons" class="modal-btns">
 
-      <!-- ACTION BUTTONS -->
-
-      <div id="actionButtons" class="modal-btns">
-
-
-        <!-- Hazırla - Kargola - Bekliyor - Barkod -->
+      <!-- ÜST SATIR -->
+      <div class="top-row">
         <button id="btnPrepare" class="btn-primary" onclick="markPrepared()">Hazırla</button>
-        <button id="btnCargo" class="btn-secondary" onclick="sendToCargo()">Kargola</button>
-
-        <!-- ✔ Yeni Bekliyor Butonu -->
-        <button id="btnWaiting" class="btn-waiting" onclick="setWaiting()">Bekliyor</button>
-
-        <button id="btnBarcode" class="btn-primary" onclick="printBarcode()" style="display:none;">Barkod Kes</button>
-
         <button class="btn-warning" onclick="enterEditMode()">Düzenle</button>
-        <button class="btn-danger" onclick="openCancelForm()">İptal Et</button>
-
-        <!-- ✔ Kapat Butonunu düzelttik -->
         <button class="btn-close" onclick="closeModal()">Kapat</button>
-
       </div>
 
-      <!-- EDIT BUTTONS -->
-      <div id="actionButtons" class="modal-btns">
-      
-      <div id="actionButtons" class="modal-btns">
+      <!-- ALT SATIR (İPTAL ET) -->
+      <button id="btnCancel" class="btn-danger full-width" onclick="openCancelForm()">İptal Et</button>
+    </div>
 
-  <!-- ÜST SATIR -->
-  <div class="top-row">
-      <button id="btnPrepare" class="btn-primary" onclick="markPrepared()">Hazırla</button>
-      <button class="btn-warning" onclick="enterEditMode()">Düzenle</button>
+    <!-- === EDIT BUTTONS === -->
+    <div id="editButtons" class="modal-btns" style="display:none;">
+      <button class="btn-secondary" onclick="saveEdit()">Kaydet</button>
+      <button class="btn-danger" onclick="cancelEdit()">Vazgeç</button>
       <button class="btn-close" onclick="closeModal()">Kapat</button>
-  </div>
-
-    <!-- ALTTAKİ: İptal Et (dokunmuyoruz) -->
-    <button id="btnCancel" class="btn-danger full-width" onclick="openCancelForm()">İptal Et</button>
-
     </div>
 
+    <!-- === RESTORE BUTTONS === -->
+    <div id="restoreButtons" class="modal-btns" style="display:none;">
+      <button class="btn-secondary" onclick="restoreOrder()">Geri Al</button>
+      <button class="btn-close" onclick="closeModal()">Kapat</button>
+    </div>
 
-      <!-- RESTORE BUTTONS -->
-      <div id="restoreButtons" class="modal-btns" style="display:none;">
-        <button class="btn-secondary" onclick="restoreOrder()">Geri Al</button>
-        <button class="btn-close" onclick="closeModal()">Kapat</button>
-      </div>
-
-      <!-- CANCEL FORM -->
-      <div id="cancelForm" style="display:none;margin-top:20px;">
-        <h3>İptal Nedeni</h3>
-        <textarea id="iptalInput" placeholder="Neden iptal edildi?"></textarea>
-        <div class="modal-btns">
-          <button class="btn-danger" onclick="confirmCancel()">İptal Et</button>
-          <button class="btn-close" onclick="cancelCancelForm()">Vazgeç</button>
-        </div>
+    <!-- === CANCEL FORM === -->
+    <div id="cancelForm" style="display:none;margin-top:20px;">
+      <h3>İptal Nedeni</h3>
+      <textarea id="iptalInput" placeholder="Neden iptal ediliyor?"></textarea>
+      <div class="modal-btns">
+        <button class="btn-danger" onclick="confirmCancel()">İptal Et</button>
+        <button class="btn-close" onclick="cancelCancelForm()">Vazgeç</button>
       </div>
     </div>
+
   </div>
+</div>
+
 
   <!-- ALERT ROOT -->
   <div id="alertRoot"></div>
