@@ -4,12 +4,12 @@
   <link rel="icon" type="image/png" href="favicon.png">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <titleQUEEN Sipariş Takip Sistemi</title>
+  <title>QUEEN Sipariş Takip Sistemi</title>
 
   <link rel="stylesheet" href="style.css" />
 
   <style>
-    /* Bekliyor butonu */
+    /* Yeni butonlar */
     .btn-waiting {
       background: #6c757d;
       color: #fff;
@@ -19,31 +19,21 @@
       cursor: pointer;
     }
 
-    /* Kapat butonu */
+    .btn-back {
+      background: #e9ecef;
+      color: #333;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
     .btn-close {
       background: #ccc;
       padding: 10px 16px;
       border-radius: 8px;
       border: none;
       cursor: pointer;
-    }
-
-    /* Üst satır */
-    .modal-btns .top-row {
-      width: 100%;
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    /* Üst sıradaki butonlar eşit genişlik */
-    .modal-btns .top-row button {
-      flex: 1;
-    }
-
-    /* İptal Et tam genişlik */
-    .modal-btns .full-width {
-      width: 100%;
     }
   </style>
 </head>
@@ -79,8 +69,11 @@
       <li id="tab_bekleyen" class="active" onclick="setTab('bekleyen')">Bekleyen</li>
       <li id="tab_hazirlandi" onclick="setTab('hazirlandi')">Hazırlandı</li>
       <li id="tab_kargolandi" onclick="setTab('kargolandi')">Kargolandı</li>
+
+      <!-- ✔ Yeni eklenenler -->
       <li id="tab_tamamlandi" onclick="setTab('tamamlandi')">Tamamlananlar</li>
       <li id="tab_sorunlu" onclick="setTab('sorunlu')">Sorunlu Gönderiler</li>
+
       <li id="tab_iptal" onclick="setTab('iptal')">İptal</li>
       <li onclick="window.location='rapor.html'">Raporlar</li>
     </ul>
@@ -101,20 +94,20 @@
 
     <!-- ORDERS TABLE -->
     <div class="table-wrapper">
-      <table class="orders-table">
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>İsim</th>
-            <th>Ürün</th>
-            <th>Tutar</th>
-            <th>Durum</th>
-            <th>Kargo Kod</th>
-            <th>Aç</th>
-          </tr>
-        </thead>
-        <tbody id="ordersBody"></tbody>
-      </table>
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>İsim</th>
+          <th>Ürün</th>
+          <th>Tutar</th>
+          <th>Durum</th>
+          <th>Kargo Kod</th>
+          <th>Aç</th>
+        </tr>
+      </thead>
+      <tbody id="ordersBody"></tbody>
+    </table>
     </div>
     <button id="loadMoreBtn" class="btn-load-more" onclick="loadMore()">Daha Fazla Yükle</button>
   </main>
@@ -128,15 +121,24 @@
       <div id="orderDetails"></div>
 
       <!-- ACTION BUTTONS -->
+
       <div id="actionButtons" class="modal-btns">
 
-        <div class="top-row">
-          <button id="btnPrepare" class="btn-primary" onclick="markPrepared()">Hazırla</button>
-          <button class="btn-warning" onclick="enterEditMode()">Düzenle</button>
-          <button class="btn-close" onclick="closeModal()">Kapat</button>
-        </div>
 
-        <button id="btnCancel" class="btn-danger full-width" onclick="openCancelForm()">İptal Et</button>
+        <!-- Hazırla - Kargola - Bekliyor - Barkod -->
+        <button id="btnPrepare" class="btn-primary" onclick="markPrepared()">Hazırla</button>
+        <button id="btnCargo" class="btn-secondary" onclick="sendToCargo()">Kargola</button>
+
+        <!-- ✔ Yeni Bekliyor Butonu -->
+        <button id="btnWaiting" class="btn-waiting" onclick="setWaiting()">Bekliyor</button>
+
+        <button id="btnBarcode" class="btn-primary" onclick="printBarcode()" style="display:none;">Barkod Kes</button>
+
+        <button class="btn-warning" onclick="enterEditMode()">Düzenle</button>
+        <button class="btn-danger" onclick="openCancelForm()">İptal Et</button>
+
+        <!-- ✔ Kapat Butonunu düzelttik -->
+        <button class="btn-close" onclick="closeModal()">Kapat</button>
 
       </div>
 
@@ -156,13 +158,12 @@
       <!-- CANCEL FORM -->
       <div id="cancelForm" style="display:none;margin-top:20px;">
         <h3>İptal Nedeni</h3>
-        <textarea id="iptalInput" placeholder="Neden iptal ediliyor?"></textarea>
+        <textarea id="iptalInput" placeholder="Neden iptal edildi?"></textarea>
         <div class="modal-btns">
           <button class="btn-danger" onclick="confirmCancel()">İptal Et</button>
           <button class="btn-close" onclick="cancelCancelForm()">Vazgeç</button>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -173,6 +174,7 @@
   <script src="app.js"></script>
 
   <script>
+    /* ✔ Bekliyor butonunun işlevi */
     function setWaiting() {
       if (!selectedOrder) return;
       db.from("queen_siparisler")
