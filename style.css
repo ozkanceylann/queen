@@ -525,7 +525,7 @@ body.login-page {
   transition: .2s;
 }
 
-.menu li#tab_tamamlandi {
+/*.menu li#tab_tamamlandi {
   background:#0d6efd;
 }
 .menu li#tab_sorunlu {
