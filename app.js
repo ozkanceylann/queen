@@ -141,6 +141,8 @@ function renderDetailsView(){
 
   const isIptal = d.kargo_durumu==="İptal";
   const isKargolandi = d.kargo_durumu==="Kargolandı";
+  const isTamamlandi = d.kargo_durumu === "Tamamlandı";
+
 
   document.getElementById("btnPrepare").style.display = d.kargo_durumu==="Bekliyor"   ? "inline-block":"none";
   document.getElementById("btnCargo").style.display   = d.kargo_durumu==="Hazırlandı" ? "inline-block":"none";
@@ -155,6 +157,16 @@ function renderDetailsView(){
   document.getElementById("restoreButtons").style.display= isIptal ? "flex":"none";
   document.getElementById("editButtons").style.display   = "none";
   document.getElementById("cancelForm").style.display    = "none";
+  // ✔ TAMAMLANDI DURUMU → sadece kapat kalsın
+if (isTamamlandi) {
+    document.getElementById("btnPrepare").style.display = "none";
+    document.getElementById("btnCargo").style.display = "none";
+    document.getElementById("btnBarcode").style.display = "none";
+    document.getElementById("btnWaiting").style.display = "none";
+    document.querySelector("#actionButtons .btn-warning").style.display = "none"; // düzenle
+    document.querySelector("#actionButtons .btn-danger").style.display = "none";  // iptal
+}
+
 }
 
 // ==============================
