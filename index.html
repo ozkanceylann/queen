@@ -143,11 +143,20 @@
       </div>
 
       <!-- EDIT BUTTONS -->
-      <div id="editButtons" class="modal-btns" style="display:none;">
-        <button class="btn-secondary" onclick="saveEdit()">Kaydet</button>
-        <button class="btn-danger" onclick="cancelEdit()">Vazgeç</button>
+    <div id="actionButtons" class="modal-btns">
+
+    <!-- ÜST SATIR: Hazırla - Düzenle - Kapat -->
+    <div class="top-row">
+        <button id="btnPrepare" class="btn-primary" onclick="markPrepared()">Hazırla</button>
+        <button class="btn-warning" onclick="enterEditMode()">Düzenle</button>
         <button class="btn-close" onclick="closeModal()">Kapat</button>
-      </div>
+    </div>
+
+    <!-- ALTTAKİ: İptal Et (dokunmuyoruz) -->
+    <button id="btnCancel" class="btn-danger full-width" onclick="openCancelForm()">İptal Et</button>
+
+    </div>
+
 
       <!-- RESTORE BUTTONS -->
       <div id="restoreButtons" class="modal-btns" style="display:none;">
