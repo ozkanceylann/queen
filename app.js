@@ -16,12 +16,13 @@ const TABLE = "queen_siparisler";
 const WH_KARGOLA = "https://n8n.ozkanceylan.uk/webhook/kargola_queen";
 const WH_BARKOD  = "https://n8n.ozkanceylan.uk/webhook/barkod_queen";
 const WH_IPTAL   = "https://n8n.ozkanceylan.uk/webhook/kargo_iptal_queen";
+const WH_SEHIR_ILCE = "https://n8n.ozkanceylan.uk/webhook/sehir_ilce_kodu_sor";
 
-// anti double-submit bellek işaretleri
+// double-submit engelleme
 const busy = { kargola: new Set(), barkod: new Set() };
 
 // ==============================
-// B-stili confirm modal + toast
+// Toast / Confirm
 // ==============================
 function confirmModal({title, text, confirmText="Onayla", cancelText="Vazgeç"}){
   return new Promise(res=>{
@@ -67,69 +68,129 @@ async function loadOrders(reset=false){
   if(currentTab==="bekleyen")   q = q.eq("kargo_durumu","Bekliyor");
   if(currentTab==="hazirlandi") q = q.eq("kargo_durumu","Hazırlandı");
   if(currentTab==="kargolandi") q = q.eq("kargo_durumu","Kargolandı");
-  if (currentTab === "tamamlandi") q = q.eq("kargo_durumu", "Tamamlandı");
-  if (currentTab === "sorunlu") q = q.eq("kargo_durumu", "Sorunlu");
+  if(currentTab==="tamamlandi") q = q.eq("kargo_durumu","Tamamlandı");
+  if(currentTab==="sorunlu")    q = q.eq("kargo_durumu","Sorunlu");
   if(currentTab==="iptal")      q = q.eq("kargo_durumu","İptal");
 
-
-  q = q.order("siparis_no",{ascending:false}).range(0, currentPage*20-1);
+  q = q.order("siparis_no",{ascending:false})
+       .range(0, currentPage*20-1);
 
   const { data, error } = await q;
   if(error){ tbody.innerHTML=`<tr><td colspan="7">HATA: ${error.message}</td></tr>`; return; }
+
   renderTable(data);
 }
 
+// ==============================
+// TABLO RENDER
+// ==============================
 function renderTable(rows){
   const tbody = document.getElementById("ordersBody");
-  if(!rows || rows.length===0){ tbody.innerHTML = `<tr><td colspan="7">Kayıt bulunamadı</td></tr>`; return; }
   tbody.innerHTML = "";
+
+  if(!rows || rows.length===0){
+    tbody.innerHTML = `<tr><td colspan="7">Kayıt bulunamadı</td></tr>`;
+    return;
+  }
+
   rows.forEach(o=>{
     const tr = document.createElement("tr");
+
+    // kargolandı sekmesinde DURUM = shipmentStatus
+    const durumText =
+      (currentTab === "kargolandi")
+      ? (o.shipmentStatus ?? "—")
+      : o.kargo_durumu;
+
+    // kargolandı sekmesinde aç yerine SORGULA
+    const actionBtn =
+      (currentTab === "kargolandi")
+      ? `<button class="btn-open" onclick="event.stopPropagation(); openTrackingUrl('${o.kargo_takip_url ?? ''}')">Sorgula</button>`
+      : `<button class="btn-open">Aç</button>`;
+
     tr.innerHTML = `
       <td>${o.siparis_no}</td>
       <td>${o.ad_soyad}</td>
       <td>${parseProduct(o.urun_bilgisi)}</td>
       <td>${o.toplam_tutar} TL</td>
-      <td>${o.kargo_durumu}</td>
+      <td>${durumText}</td>
       <td>${o.kargo_takip_kodu ?? "-"}</td>
-      <td><button class="btn-open">Aç</button></td>`;
-    tr.addEventListener("click", e=>{ if(!e.target.classList.contains("btn-open")) openOrder(o.siparis_no); });
-    tr.querySelector(".btn-open").addEventListener("click", e=>{ e.stopPropagation(); openOrder(o.siparis_no); });
+      <td>${actionBtn}</td>
+    `;
+
+    // kargolandı değilse normal aç
+    if(currentTab !== "kargolandi"){
+      tr.addEventListener("click", e=>{
+        if(!e.target.classList.contains("btn-open")){
+          openOrder(o.siparis_no);
+        }
+      });
+      tr.querySelector(".btn-open").addEventListener("click", e=>{
+        e.stopPropagation();
+        openOrder(o.siparis_no);
+      });
+    }
+
     tbody.appendChild(tr);
   });
 }
 
+// ==============================
+// Tracking URL Aç
+// ==============================
+function openTrackingUrl(url){
+  if(!url){ toast("Kargo sorgulama linki yok."); return; }
+  window.open(url, "_blank");
+}
+
+// ==============================
+// Ürün parse
+// ==============================
 function parseProduct(v){
   if(!v) return "-";
-  try{ if(v.startsWith("[") && v.endsWith("]")) return JSON.parse(v).join(", "); }catch{}
+  try{
+    if(v.startsWith("[") && v.endsWith("]")){
+      return JSON.parse(v).join(", ");
+    }
+  }catch{}
   return v;
 }
 
 // ==============================
-// Modal open/close
+// Sipariş Aç
 // ==============================
 async function openOrder(id){
   const { data, error } = await db.from(TABLE).select("*").eq("siparis_no", id).single();
-  if(error || !data) return alert("Sipariş bulunamadı!");
+  if(error || !data){ toast("Sipariş bulunamadı"); return; }
+
   selectedOrder = data;
   renderDetailsView();
   document.getElementById("orderModal").style.display="flex";
 }
-function closeModal(){ document.getElementById("orderModal").style.display="none"; }
+function closeModal(){
+  document.getElementById("orderModal").style.display="none";
+}
 
 // ==============================
-// Details view + button visibility
+// Sipariş Detayı
 // ==============================
 function renderDetailsView(){
   const d = selectedOrder;
+
   document.getElementById("orderDetails").innerHTML = `
     <p><b>No:</b> ${d.siparis_no}</p>
     <p><b>İsim:</b> ${d.ad_soyad}</p>
     <p><b>Sipariş Alan Tel:</b> ${d.siparis_tel}</p>
     <p><b>Müşteri Tel:</b> ${d.musteri_tel}</p>
     <p><b>Adres:</b> ${d.adres}</p>
-    <p><b>Şehir / İlçe:</b> ${d.sehir} / ${d.ilce}<br>
-    <small>Kodlar: ${d.sehir_kodu ?? "-"} / ${d.ilce_kodu ?? "-"}</small></p>
+
+    <p>
+      <b>Şehir / İlçe:</b> ${d.sehir} / ${d.ilce}
+      <button class="btn-mini" onclick="queryCityDistrictCodes()">Sor</button>
+      <br>
+      <small>Kodlar: ${d.sehir_kodu ?? "-"} / ${d.ilce_kodu ?? "-"}</small>
+    </p>
+
     <p><b>Ürün:</b> ${parseProduct(d.urun_bilgisi)}</p>
     <p><b>Adet:</b> ${d.kargo_adet ?? "-"}</p>
     <p><b>KG:</b> ${d.kargo_kg ?? "-"}</p>
@@ -140,37 +201,64 @@ function renderDetailsView(){
   `;
 
   const isIptal = d.kargo_durumu==="İptal";
-  const isKargolandi = d.kargo_durumu==="Kargolandı";
-  const isTamamlandi = d.kargo_durumu === "Tamamlandı";
+  const isKargo = d.kargo_durumu==="Kargolandı";
+  const isTamam = d.kargo_durumu==="Tamamlandı";
 
-
-  document.getElementById("btnPrepare").style.display = d.kargo_durumu==="Bekliyor"   ? "inline-block":"none";
-  document.getElementById("btnCargo").style.display   = d.kargo_durumu==="Hazırlandı" ? "inline-block":"none";
-  document.getElementById("btnBarcode").style.display = isKargolandi ? "inline-block":"none";
-  document.getElementById("btnWaiting").style.display = (d.kargo_durumu !== "Bekliyor" && d.kargo_durumu !== "Kargolandı") ? "inline-block":"none";
- 
-
-  const editBtn = document.querySelector("#actionButtons .btn-warning");
-  if(editBtn){ editBtn.style.display = isKargolandi ? "none" : "inline-block"; }
+  document.getElementById("btnPrepare").style.display = (d.kargo_durumu==="Bekliyor") ? "inline-block":"none";
+  document.getElementById("btnCargo").style.display   = (d.kargo_durumu==="Hazırlandı") ? "inline-block":"none";
+  document.getElementById("btnBarcode").style.display = isKargo ? "inline-block":"none";
+  document.getElementById("btnWaiting").style.display = (d.kargo_durumu !== "Bekliyor" && d.kargo_durumu!=="Kargolandı") ? "inline-block":"none";
 
   document.getElementById("actionButtons").style.display = isIptal ? "none":"flex";
   document.getElementById("restoreButtons").style.display= isIptal ? "flex":"none";
-  document.getElementById("editButtons").style.display   = "none";
-  document.getElementById("cancelForm").style.display    = "none";
-  // ✔ TAMAMLANDI DURUMU → sadece kapat kalsın
-if (isTamamlandi) {
-    document.getElementById("btnPrepare").style.display = "none";
-    document.getElementById("btnCargo").style.display = "none";
-    document.getElementById("btnBarcode").style.display = "none";
-    document.getElementById("btnWaiting").style.display = "none";
-    document.querySelector("#actionButtons .btn-warning").style.display = "none"; // düzenle
-    document.querySelector("#actionButtons .btn-danger").style.display = "none";  // iptal
-}
 
+  if(isTamam){
+    document.getElementById("btnPrepare").style.display="none";
+    document.getElementById("btnCargo").style.display="none";
+    document.getElementById("btnBarcode").style.display="none";
+    document.getElementById("btnWaiting").style.display="none";
+    document.querySelector("#actionButtons .btn-warning").style.display="none";
+    document.querySelector("#actionButtons .btn-danger").style.display="none";
+  }
+
+  document.getElementById("editButtons").style.display="none";
+  document.getElementById("cancelForm").style.display="none";
 }
 
 // ==============================
-// Edit mode
+// ŞEHİR - İLÇE KOD SORGULAMA
+// ==============================
+async function queryCityDistrictCodes(){
+  if(!selectedOrder) return;
+
+  toast("Kodlar sorgulanıyor...");
+
+  const res = await fetch(WH_SEHIR_ILCE, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(selectedOrder)
+  });
+
+  if(!res.ok){
+    toast("Sorgulama hatası!");
+    return;
+  }
+
+  const data = await res.json();
+
+  await db.from(TABLE)
+    .update({
+      sehir_kodu: data.sehir_kodu,
+      ilce_kodu: data.ilce_kodu
+    })
+    .eq("siparis_no", selectedOrder.siparis_no);
+
+  toast("Şehir/İlçe kodları güncellendi");
+  openOrder(selectedOrder.siparis_no); // yenile
+}
+
+// ==============================
+// DÜZENLEME MODU
 // ==============================
 function enterEditMode(){
   const d = selectedOrder;
@@ -213,8 +301,9 @@ function enterEditMode(){
         <label>Not</label><textarea id="notlar">${d.notlar ?? ""}</textarea>
       </div>
     </div>`;
-  document.getElementById("actionButtons").style.display = "none";
-  document.getElementById("editButtons").style.display = "flex";
+
+  document.getElementById("actionButtons").style.display="none";
+  document.getElementById("editButtons").style.display="flex";
 }
 
 async function saveEdit(){
@@ -232,75 +321,84 @@ async function saveEdit(){
     odeme_sekli: odeme_sekli.value,
     notlar: notlar.value
   };
+
   await db.from(TABLE).update(updated).eq("siparis_no", selectedOrder.siparis_no);
   toast("Değişiklikler kaydedildi");
   closeModal(); loadOrders(true);
 }
-function cancelEdit(){ renderDetailsView(); document.getElementById("editButtons").style.display="none"; document.getElementById("actionButtons").style.display="flex"; }
+
+function cancelEdit(){
+  renderDetailsView();
+  document.getElementById("editButtons").style.display="none";
+  document.getElementById("actionButtons").style.display="flex";
+}
 
 // ==============================
-// Hazırla
+// Hazırla → Adisyon Yazdır
 // ==============================
 async function markPrepared(){
   await db.from(TABLE)
     .update({kargo_durumu:"Hazırlandı"})
     .eq("siparis_no", selectedOrder.siparis_no);
 
-  // 👇 ADİSYON FİŞİ YAZDIR (YAZICI A)
   printSiparis(selectedOrder);
 
-  toast("Sipariş Hazırlandı ve adisyon yazdırılıyor...");
-  closeModal(); 
-  loadOrders(true);
+  toast("Sipariş Hazırlandı");
+  closeModal(); loadOrders(true);
 }
+
 // ==============================
-// Kargola (B stili uyarı + 1 dk sadece bu sipariş kilidi)
+// Kargola
 // ==============================
 async function sendToCargo(){
   const ok = await confirmModal({
-    title: "Kargoya Gönder",
-    text: "Bu sipariş KARGOLANDI olarak işaretlenecek ve DHL'e iletilecektir.\nBu işlem normal şartlarda geri alınamaz ve iptal durumunda kargo firması ek ücret talep edebilir.",
-    confirmText: "Evet, Gönder", cancelText: "Vazgeç"
+    title:"Kargoya Gönder",
+    text:"Sipariş KARGOLANDI olarak işaretlenecek.",
+    confirmText:"Evet",
+    cancelText:"Hayır"
   });
   if(!ok) return;
 
+  // double submit
   const key = selectedOrder.siparis_no;
-  if(busy.kargola.has(key)){ toast("Bu sipariş için işlem zaten gönderildi!"); return; }
+  if(busy.kargola.has(key)){
+    toast("Bu sipariş zaten işleniyor.");
+    return;
+  }
   busy.kargola.add(key);
 
   try{
-    await fetch(WH_KARGOLA, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(selectedOrder) });
-    toast("Kargoya gönderildi! Güncellenmesi 1 dakikayı bulabilir.");
-    const btn = document.getElementById("btnCargo");
-    if(btn){ btn.disabled = true; setTimeout(()=>{ btn.disabled=false; }, 60000); }
+    await fetch(WH_KARGOLA, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(selectedOrder)
+    });
+    toast("Kargoya gönderildi");
   }catch(e){
-    toast("Gönderim sırasında hata oluştu");
+    toast("Hata oluştu");
   }finally{
     setTimeout(()=>busy.kargola.delete(key), 60000);
   }
 }
+
 // ==============================
-// ADİSYON
+// Adisyon Yazdır
 // ==============================
-function printSiparis(order) {
+function printSiparis(order){
   const w = window.open("adisyon_print.html", "_blank", "width=320,height=600");
 
-  // Ürünleri diziye çevir
   let products = [];
-  try {
+  try{
     products = JSON.parse(order.urun_bilgisi);
-  } catch {
-    products = [order.urun_bilgisi];
-  }
+  }catch{ products = [order.urun_bilgisi]; }
 
   let productRows = "";
-  products.forEach((p, i) => {
+  products.forEach((p,i)=>{
     productRows += `
       <tr>
         <td>${i+1}. ${p}</td>
         <td style="text-align:right;">1</td>
-      </tr>
-    `;
+      </tr>`;
   });
 
   const html = `
@@ -315,10 +413,7 @@ function printSiparis(order) {
     <div class="box">
       <b>ÜRÜNLER</b>
       <table>
-        <tr>
-          <th>Ürün</th>
-          <th style="text-align:right;">Adet</th>
-        </tr>
+        <tr><th>Ürün</th><th style="text-align:right;">Adet</th></tr>
         ${productRows}
         <tr class="total-row">
           <td>Toplam:</td>
@@ -332,56 +427,41 @@ function printSiparis(order) {
       <div class="row"><b>Tutar:</b> ${order.toplam_tutar} TL</div>
       <div class="row"><b>Tarih:</b> ${new Date().toLocaleString("tr-TR")}</div>
       <div class="row"><b>Not:</b> ${order.notlar || "-"}</div>
-      </div>
+    </div>
   `;
 
   w.onload = () => {
     w.document.getElementById("content").innerHTML = html;
-
-    if (typeof w.doPrint === "function") {
-      w.doPrint();
-    }
-  };
+    if(typeof w.doPrint==="function") w.doPrint();
+  }
 }
 
 // ==============================
-// Barkod
+// Barkod Yazdır
 // ==============================
 function printBarcode(){
-  const b64 = selectedOrder.zpl_base64; // PNG Base64
+  const b64 = selectedOrder.zpl_base64;
   const w = window.open("barkod_print.html", "_blank");
-
-  w.onload = () => {
-    w.showBarcode(b64);
-  };
+  w.onload = ()=> w.showBarcode(b64);
 }
 
-
 // ==============================
-// İptal
+// İPTAL
 // ==============================
 function openCancelForm(){
-
-  // Eğer sipariş KARGOLANDI ise özel popup aç
-  if (selectedOrder.kargo_durumu === "Kargolandı") {
-
+  if(selectedOrder.kargo_durumu==="Kargolandı"){
     const wrap = document.createElement("div");
-    wrap.className = "alert-backdrop";
+    wrap.className="alert-backdrop";
 
     wrap.innerHTML = `
       <div class="alert-card" style="max-width:600px;">
         <div class="alert-title">Kargolanmış Siparişi İptal Et</div>
+        <div class="alert-text">Bu sipariş kargo firmasına iletilmiş.</div>
 
-        <div class="alert-text" style="margin-bottom: 15px;">
-          Bu sipariş <b>kargo firmasına gönderilmiş</b> durumda.<br>
-          İptal işlemi sonucunda kargo firması tarafından <b>ek ücretler</b> talep edilebilir.
-        </div>
+        <b>İptal Nedeni</b>
+        <textarea id="iptalNedeniKargo" style="width:100%;height:90px;margin-top:10px;"></textarea>
 
-        <b>İptal Nedeni (zorunlu)</b>
-        <textarea id="iptalNedeniKargo" style="width:100%;height:90px;margin-top:10px;"
-          placeholder="Neden iptal ediliyor?"></textarea>
-
-        <div class="alert-actions" style="margin-top:20px;display:flex;justify-content:space-between;">
+        <div class="alert-actions" style="margin-top:20px;">
           <button class="btn-brand" id="iptalGonder">İptal Et</button>
           <button class="btn-ghost" id="iptalVazgec">Vazgeç</button>
         </div>
@@ -390,94 +470,72 @@ function openCancelForm(){
 
     document.getElementById("alertRoot").appendChild(wrap);
 
-    wrap.querySelector("#iptalVazgec").onclick = () => wrap.remove();
-
-    wrap.querySelector("#iptalGonder").onclick = () => {
+    wrap.querySelector("#iptalVazgec").onclick = ()=> wrap.remove();
+    wrap.querySelector("#iptalGonder").onclick = ()=>{
       const reason = document.getElementById("iptalNedeniKargo").value.trim();
-      if (!reason) return toast("İptal nedeni gerekli.");
-
+      if(!reason) return toast("Neden gerekli");
       wrap.remove();
       confirmCancelKargolu(reason);
     };
-
     return;
   }
 
-  // Normal iptal formu
   document.getElementById("cancelForm").style.display="block";
   document.getElementById("actionButtons").style.display="none";
-  document.getElementById("editButtons").style.display="none";
 }
 
 function cancelCancelForm(){
   document.getElementById("cancelForm").style.display="none";
   document.getElementById("actionButtons").style.display="flex";
 }
+
 async function confirmCancel(){
   const reason = document.getElementById("iptalInput").value.trim();
   if(!reason) return toast("İptal nedeni gerekli");
 
-  await fetch(WH_IPTAL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ ...selectedOrder, reason }) });
+  await fetch(WH_IPTAL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({...selectedOrder, reason})
+  });
 
-  await db.from(TABLE).update({ kargo_durumu:"İptal", iptal_nedeni: reason, iptal_tarihi: new Date().toISOString() }).eq("siparis_no", selectedOrder.siparis_no);
+  await db.from(TABLE)
+    .update({kargo_durumu:"İptal", iptal_nedeni:reason, iptal_tarihi:new Date().toISOString()})
+    .eq("siparis_no", selectedOrder.siparis_no);
+
   toast("Sipariş iptal edildi");
   closeModal(); loadOrders(true);
 }
-// ==============================
-// BEKLİYOR
-// ==============================
 
-
-function setWaiting() {
-  if (!selectedOrder) return;
-  db.from(TABLE)
-    .update({ kargo_durumu: "Bekliyor" })
-    .eq("siparis_no", selectedOrder.siparis_no)
-    .then(() => {
-      toast("Sipariş Bekliyor durumuna alındı");
-      closeModal();
-      loadOrders(true);
-    });
-}
-// ==============================
-// KARGOLANMIŞ İPTAL ONAY
-// ==============================
-
-async function confirmCancelKargolu(reason) {
-
-  await fetch(WH_IPTAL, {
+async function confirmCancelKargolu(reason){
+  await fetch(WH_IPTAL,{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ ...selectedOrder, reason })
+    body: JSON.stringify({...selectedOrder, reason})
   });
 
-  await db
-    .from(TABLE)
-    .update({
-      kargo_durumu: "İptal",
-      iptal_nedeni: reason,
-      iptal_tarihi: new Date().toISOString()
-    })
+  await db.from(TABLE)
+    .update({kargo_durumu:"İptal", iptal_nedeni:reason, iptal_tarihi:new Date().toISOString()})
     .eq("siparis_no", selectedOrder.siparis_no);
 
   toast("Kargolanmış sipariş iptal edildi");
-  closeModal();
-  loadOrders(true);
+  closeModal(); loadOrders(true);
 }
-
-
 
 // ==============================
 // Restore
 // ==============================
 async function restoreOrder(){
-  await db.from(TABLE).update({ kargo_durumu:"Bekliyor", iptal_nedeni:null, iptal_tarihi:null }).eq("siparis_no", selectedOrder.siparis_no);
+  await db.from(TABLE)
+    .update({kargo_durumu:"Bekliyor", iptal_nedeni:null, iptal_tarihi:null})
+    .eq("siparis_no", selectedOrder.siparis_no);
+
   toast("Sipariş geri alındı");
   closeModal(); loadOrders(true);
 }
 
 // ==============================
-// Tab/Arama/Load more
+// TAB-Menü
 // ==============================
 function setTab(tab){
   currentTab = tab;
@@ -485,42 +543,58 @@ function setTab(tab){
   document.getElementById(`tab_${tab}`).classList.add("active");
   loadOrders(true);
 }
-function loadMore(){ currentPage++; loadOrders(false); }
 
+function loadMore(){
+  currentPage++;
+  loadOrders(false);
+}
+
+// ==============================
+// ARAMA
+// ==============================
 async function searchOrders(){
   const q = document.getElementById("searchInput").value.trim();
   if(!q) return loadOrders(true);
-  const { data } = await db.from(TABLE).select("*").or(`
-    siparis_no.eq.${q},
-    ad_soyad.ilike.%${q}%,
-    siparis_tel.ilike.%${q}%,
-    musteri_tel.ilike.%${q}%`);
+
+  const { data, error } = await db.from(TABLE)
+    .select("*")
+    .or(`
+      siparis_no.eq.${q},
+      ad_soyad.ilike.%${q}%,
+      musteri_tel.ilike.%${q}%,
+      siparis_tel.ilike.%${q}%,
+      adres.ilike.%${q}%,
+      kargo_takip_kodu.ilike.%${q}%
+    `);
+
+  if(error){ toast("Arama hatası"); return; }
+
   renderTable(data);
 }
-function clearSearch(){ document.getElementById("searchInput").value=""; loadOrders(true); }
+
+function clearSearch(){
+  document.getElementById("searchInput").value="";
+  loadOrders(true);
+}
 
 // ==============================
-// Mobile menu
+// Mobile Menu
 // ==============================
-function toggleMenu(){ document.querySelector(".sidebar").classList.toggle("open"); }
+function toggleMenu(){
+  document.querySelector(".sidebar").classList.toggle("open");
+}
 
-// Sidebar dışına tıklayınca menüyü kapat
-document.addEventListener("click", function(e) {
+document.addEventListener("click", function(e){
   const sidebar = document.querySelector(".sidebar");
   const menuBtn = document.querySelector(".mobile-menu-btn");
 
-  // Menü açık değilse işlem yapma
-  if (!sidebar.classList.contains("open")) return;
+  if(!sidebar.classList.contains("open")) return;
+  if(sidebar.contains(e.target) || menuBtn.contains(e.target)) return;
 
-  // Sidebar'a veya menü butonuna tıklandıysa kapatma
-  if (sidebar.contains(e.target) || menuBtn.contains(e.target)) return;
-
-  // Diğer her tıklamada sidebar'ı kapat
   sidebar.classList.remove("open");
 });
 
-
 // ==============================
-// Init
+// INIT
 // ==============================
 loadOrders(true);
