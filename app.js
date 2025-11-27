@@ -195,6 +195,18 @@ function renderDetails(){
     <p><b>Ödeme:</b> ${d.odeme_sekli}</p>
     <p><b>Not:</b> ${d.notlar ?? "-"}</p>
   `;
+   // ==== SOR butonu kontrolü ====
+try {
+  const sorBtn = document.querySelector(".btn-mini");
+  if (sorBtn) {
+    if (["Bekliyor", "Hazırlandı"].includes(d.kargo_durumu)) {
+      sorBtn.style.display = "inline-block";
+    } else {
+      sorBtn.style.display = "none";
+    }
+  }
+} catch {}
+
 
   const iptal = d.kargo_durumu==="İptal";
   const kargo = d.kargo_durumu==="Kargolandı";
