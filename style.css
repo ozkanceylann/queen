@@ -191,7 +191,7 @@ body {
 .modal {
   display: none;
   position: fixed;
-  z-index: 5000;
+  z-index: 500;   /* DÜZELTİLDİ */
   top: 0;
   left: 0;
   width: 100%;
