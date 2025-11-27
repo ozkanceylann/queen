@@ -107,17 +107,20 @@ body{
   z-index:500;
   background:rgba(0,0,0,.45); backdrop-filter:blur(2px)
 }
-.modal-content{
-  width:min(600px,90%); max-height:85vh; overflow-y:auto;
-  background:#fff; margin:80px auto; padding:25px; border-radius:12px;
-  animation:fadeIn .25s ease
-}
-/* Sipariş Detayı Modal Boyutu Ayarı */
 .modal-content {
-  transform: scale(0.92);
+  width: min(650px, 95%);          /* daha dar → kare görünüm kaybolur */
+  max-height: 92vh;                /* daha uzun modal, tam ekranın %92'si */
+  overflow-y: auto;                /* içerik taşarsa scroll */
+  background: #fff;
+  margin: 40px auto;
+  padding: 25px;
+  border-radius: 16px;             /* köşeleri biraz daha oval */
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  animation: fadeIn .25s ease;
+  transform: scale(0.97);          /* hafif küçültme → daha premium görünüm */
   transform-origin: top center;
-  max-height: 90vh !important;
 }
+
 @keyframes fadeIn{ from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:none} }
 .modal h2{ margin:0 0 10px; color:var(--brand); font-size:22px }
 .close{ float:right; font-size:26px; cursor:pointer; color:#666 }
