@@ -257,6 +257,15 @@ function renderDetails() {
   document.getElementById("editButtons").style.display = "none";
   document.getElementById("cancelForm").style.display = "none";
 }
+// ==== Hazırlandı DURUMUNDA DÜZENLE butonunu gizle (tam uyumlu) ====
+try {
+  const duzenleBtn = [...document.querySelectorAll("#actionButtons button")]
+    .find(btn => btn.textContent.trim() === "Düzenle");
+
+  if (duzenleBtn && d.kargo_durumu === "Hazırlandı") {
+    duzenleBtn.style.display = "none";
+  }
+} catch (e) {}
 
 
 /* ============================================================
