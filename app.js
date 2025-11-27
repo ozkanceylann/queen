@@ -68,6 +68,17 @@ function logout(){
   window.location.href = "login.html";
 }
 
+
+async function setWaiting(){
+  await db.from(TABLE)
+    .update({ kargo_durumu: "Bekliyor" })
+    .eq("siparis_no", selectedOrder.siparis_no);
+
+  toast("Sipariş Bekliyor olarak güncellendi");
+  closeModal();
+  loadOrders(true);
+}
+
 /* ============================================================
    SİPARİŞ LİSTELEME
 ============================================================ */
@@ -337,6 +348,8 @@ function cancelEdit(){
   document.getElementById("editButtons").style.display = "none";
   document.getElementById("actionButtons").style.display = "flex";
 }
+
+
 
 /* ============================================================
    DURUM DEĞİŞİMLERİ
