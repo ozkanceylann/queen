@@ -349,7 +349,7 @@ Bu işlem normal şartlarda geri alınamaz ve iptal durumunda kargo firması ek 
   }catch(e){
     toast("Gönderim hatası");
   }finally{
-    setTimeout(()=>busy.kargola.delete(key), 30000);
+    setTimeout(()=>busy.kargola.delete(key), 20000);
   }
 }
 
