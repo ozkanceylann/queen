@@ -6,9 +6,13 @@
 
   <title>Sipariş Sistemi</title>
 
-  <!-- CONFIG MUTLAKA İLK YÜKLENİR -->
+  <!-- ✔ FAVICON DÜZELTİLDİ -->
+  <link rel="icon" type="image/png" href="favicon.png" />
+
+  <!-- ✔ CONFIG ÖNCE GELMEK ZORUNDA -->
   <script src="config.js"></script>
 
+  <!-- CSS -->
   <link rel="stylesheet" href="style.css" />
 
   <style>
@@ -46,6 +50,7 @@
       <li id="tab_sorunlu"    onclick="setTab('sorunlu')">Sorunlu</li>
       <li id="tab_iptal"      onclick="setTab('iptal')">İptal</li>
 
+      <!-- ✔ RAPORLAR BURADAN AÇILIYOR -->
       <li onclick="window.location='rapor.html'">Raporlar</li>
     </ul>
 
@@ -99,12 +104,16 @@
       <div id="actionButtons" class="modal-btns">
         <button id="btnPrepare" class="btn-primary" onclick="markPrepared()">Hazırla</button>
         <button id="btnCargo" class="btn-secondary" onclick="sendToCargo()">Kargola</button>
-
         <button id="btnWaiting" class="btn-waiting" onclick="setWaiting()">Bekliyor</button>
+
         <button id="btnBarcode" class="btn-primary" style="display:none;" onclick="printBarcode()">Barkod Kes</button>
 
+        <!-- ✔ DÜZENLE GÖRÜNÜMÜ APP.JS TARAFINDAN YÖNETİLİYOR -->
         <button class="btn-warning" onclick="enterEditMode()">Düzenle</button>
+
+        <!-- ✔ İPTAL ET BUTONU DÜZELTİLDİ -->
         <button class="btn-danger" onclick="openCancelForm()">İptal Et</button>
+
         <button class="btn-close" onclick="closeModal()">Kapat</button>
       </div>
 
@@ -137,15 +146,13 @@
   <div id="alertRoot"></div>
 
 
-
   <!-- SUPABASE -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- APP (MODULE OLMAK ZORUNDA) -->
+  <!-- APP -->
   <script src="app.js" type="module"></script>
 
-
-  <!-- LOGO & BAŞLIK VE İLK YÜKLEME -->
+  <!-- LOGO & BAŞLIK & İLK YÜKLEME -->
   <script type="module">
     document.addEventListener("DOMContentLoaded", async () => {
 
@@ -155,11 +162,9 @@
       document.getElementById("brandTitle").innerHTML =
         CONFIG.brandName + "<br/>Sipariş Sistemi";
 
-      // İlk tabloyu yükle
       loadOrders(true);
     });
   </script>
-
 
 </body>
 </html>
