@@ -183,6 +183,25 @@ function closeModal(){ document.getElementById("orderModal").style.display = "no
 function renderDetails() {
   const d = selectedOrder;
 
+   // === BEKLİYOR butonu görünürlüğü yönetimi ===
+try {
+  const bekliyorBtn = document.getElementById("btnWaiting");
+
+  if (bekliyorBtn) {
+    if (d.kargo_durumu === "Bekliyor") {
+      // Bekleyen ekranda gereksiz → gizle
+      bekliyorBtn.style.display = "none";
+    } else if (d.kargo_durumu === "Hazırlandı") {
+      // Hazırlandı ekranında görünmeli
+      bekliyorBtn.style.display = "inline-block";
+    } else {
+      // Diğer durumlarda (kargolandı, iptal, tamamlandı) görünmeyecek
+      bekliyorBtn.style.display = "none";
+    }
+  }
+} catch (e) {}
+
+
   /* — ÖNCE TÜM BUTONLARI SIFIRLA — */
   document.querySelectorAll("#actionButtons button").forEach(btn => {
     btn.style.display = "inline-block";
