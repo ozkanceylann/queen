@@ -209,14 +209,15 @@ function renderDetails() {
     }
   } catch (e) {}
 
-  /* === Hazırlandı DURUMUNDA DÜZENLE butonunu gizle === */
-  try {
-    const duzenleBtn = document.querySelector("#actionButtons .btn-warning");
-    if (duzenleBtn && d.kargo_durumu === "Hazırlandı") {
-      duzenleBtn.style.display = "none";
-    }
-  } catch (e) {}
+// ==== Hazırlandı DURUMUNDA DÜZENLE butonunu gizle ====
+try {
+  const duzenleBtn = [...document.querySelectorAll("#actionButtons button")]
+    .find(btn => btn.textContent.trim() === "Düzenle");
 
+  if (duzenleBtn && d.kargo_durumu === "Hazırlandı") {
+    duzenleBtn.style.display = "none";
+  }
+} catch (e) {}
   /* — DURUM KURALLARI — */
 
   const iptal = d.kargo_durumu === "İptal";
@@ -257,16 +258,6 @@ function renderDetails() {
   document.getElementById("editButtons").style.display = "none";
   document.getElementById("cancelForm").style.display = "none";
 }
-// ==== Hazırlandı DURUMUNDA DÜZENLE butonunu gizle (tam uyumlu) ====
-try {
-  const duzenleBtn = [...document.querySelectorAll("#actionButtons button")]
-    .find(btn => btn.textContent.trim() === "Düzenle");
-
-  if (duzenleBtn && d.kargo_durumu === "Hazırlandı") {
-    duzenleBtn.style.display = "none";
-  }
-} catch (e) {}
-
 
 /* ============================================================
    ŞEHİR/İLÇE KODU SOR
