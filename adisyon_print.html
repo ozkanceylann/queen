@@ -2,33 +2,31 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>♕️ QUEEN SİPARİŞ</title>
+<title>♕️ Fiş Yazdır</title>
 
+<!-- TERMAL YAZICI AYARLARI -->
 <style>
-
-/* --- TERMAL 80mm için gerçek genişlik --- */
 @page {
-  size: 80mm auto;           /* 80mm fiş genişliği */
-  margin: 0;                 /* 0 kenar boşluğu */
+  size: 80mm auto;
+  margin: 0;
 }
 
 html, body {
   width: 80mm;
   margin: 0;
-  padding: 0 4px;            /* sağ/sol 2mm gibi çok ufak boşluk */
+  padding: 0 4px;
   font-family: Arial, sans-serif;
   font-size: 12px;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 /* Logo */
 .logo {
   text-align: center;
-  margin: 4px 0;
+  margin: 6px 0 4px 0;
 }
-
 .logo img {
-  width: 110px;
+  width: 120px;
   height: auto;
 }
 
@@ -39,59 +37,42 @@ h2 {
   margin: 4px 0;
 }
 
-/* Çizgi */
+/* İçerik */
+#content {
+  width: 100%;
+  word-wrap: break-word;
+}
+
+/* Kesikli çizgi */
 .line {
   border-bottom: 1px dashed #000;
-  margin: 4px 0;
+  margin: 6px 0;
 }
-
-/* Satır */
-.row { margin: 2px 0; }
-
-/* Kutulu alan */
-.box {
-  border: 1px solid #000;
-  padding: 6px;
-  margin: 4px 0;
-}
-
-/* Ürün listesi */
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-table th, table td {
-  padding: 3px 0;
-  border-bottom: 1px dashed #000;
-}
-
-/* Toplam satırı */
-.total-row td {
-  font-weight: bold;
-  border-top: 1px dashed #000;
-}
-
 </style>
 
 </head>
 <body>
 
+<!-- LOGO -->
 <div class="logo">
   <img src="queen_logo.png">
 </div>
 
 <h2>♕️ QUEEN SİPARİŞ</h2>
 
+<!-- JS’den içeriği basacağımız yer -->
 <div id="content"></div>
 
 <script>
-  window.doPrint = function () {
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => window.close(), 300);
-    }, 150);
-  };
+/* ============================================================
+   BU FONKSİYON app.js TARAFINDAN ÇAĞRILIR
+============================================================ */
+window.doPrint = function () {
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => window.close(), 300);
+  }, 150);
+};
 </script>
 
 </body>
