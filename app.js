@@ -30,22 +30,6 @@ let selectedOrder = null;
 
 const busy = { kargola: new Set(), barkod: new Set() };
 
-function normalize(str) {
-  return (str || "")
-    .toString()
-    .normalize("NFKD")                     // unicode çöpleri temizle
-    .replace(/[\u0300-\u036f]/g, "")       // aksan / birleşik harf temizle
-    .replace(/[^\x00-\x7F]/g, "")          // ASCII dışı her şeyi kaldır
-    .replace(/[^a-z0-9]/gi, "")            // tüm sembol, boşluk ve çöp karakteri sil
-    .toLowerCase()
-    .replace(/ç/g, "c")
-    .replace(/ğ/g, "g")
-    .replace(/ı/g, "i")
-    .replace(/ö/g, "o")
-    .replace(/ş/g, "s")
-    .replace(/ü/g, "u");
-}
-
 
 
 /* ============================================================
@@ -302,75 +286,28 @@ function renderDetails() {
 
 
 /* ============================================================
-   ŞEHİR/İLÇE KODU SOR
+   ŞEHİR/İLÇE KODU SOR  (ORİJİNAL - WEBHOOK İLE)
 ============================================================ */
-async function queryCityDistrictCodes() {
+async function queryCityDistrictCodes(){
   toast("Kodlar sorgulanıyor...");
 
-  const cityName = selectedOrder.sehir?.trim() || "";
-  const districtName = selectedOrder.ilce?.trim() || "";
-
-  if (!cityName || !districtName) {
-    return toast("Şehir veya ilçe eksik!");
-  }
-
-  const normCity = normalize(cityName);
-  const normDistrict = normalize(districtName);
-
-  // Şehirleri çek
-  const { data: cities } = await db.from("sehir").select("*");
-  if (!cities) return toast("Şehir listesi alınamadı!");
-
-  // Şehir eşleşmesi (güçlü)
-  let foundCity = cities.find(c => {
-    const normDB = normalize(c.name);
-    return (
-      normDB === normCity ||
-      normDB.includes(normCity) ||
-      normCity.includes(normDB)
-    );
+  const res = await fetch(WH_SEHIR_ILCE, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(selectedOrder)
   });
 
-  if (!foundCity) {
-    return toast("Şehir bulunamadı: " + cityName);
-  }
+  if(!res.ok) return toast("Kod bulunamadı");
 
-  const sehir_kodu = foundCity.id;
+  const d = await res.json();
 
-  // İlçeleri çek
-  const { data: ilceler } = await db
-    .from("ilce")
-    .select("*")
-    .eq("city_id", sehir_kodu);
-
-  if (!ilceler) return toast("İlçe listesi alınamadı!");
-
-  // İlçe eşleşmesi (güçlü)
-  let foundDistrict = ilceler.find(i => {
-    const normDB = normalize(i.name);
-    return (
-      normDB === normDistrict ||
-      normDB.includes(normDistrict) ||
-      normDistrict.includes(normDB)
-    );
-  });
-
-  if (!foundDistrict) {
-    return toast("İlçe bulunamadı: " + districtName);
-  }
-
-  const ilce_kodu = foundDistrict.code;
-
-  // Güncelle
   await db.from(TABLE)
-    .update({ sehir_kodu, ilce_kodu })
+    .update({ sehir_kodu:d.sehir_kodu, ilce_kodu:d.ilce_kodu })
     .eq("siparis_no", selectedOrder.siparis_no);
 
-  toast("Kodlar güncellendi ✔");
+  toast("Kodlar güncellendi");
   openOrder(selectedOrder.siparis_no);
 }
-
-
 
 /* ============================================================
    DÜZENLEME
