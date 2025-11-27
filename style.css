@@ -255,3 +255,10 @@ canvas{ max-width:100% }
   .content-area{ margin-left:0!important; padding-top:70px }
   .edit-grid{ grid-template-columns:1fr } /* form tek kolon */
 }
+/* İPTAL MODALINDA BUTON UZAMASINI ENGELLE */
+#cancelForm .modal-btns button {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 120px !important;
+}
+
