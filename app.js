@@ -118,18 +118,17 @@ function renderTable(rows){
       <td>${actionBtn}</td>
     `;
 
-    // kargolandı değilse normal aç
-    if(currentTab !== "kargolandi"){
-      tr.addEventListener("click", e=>{
-        if(!e.target.classList.contains("btn-open")){
-          openOrder(o.siparis_no);
-        }
-      });
-      tr.querySelector(".btn-open").addEventListener("click", e=>{
-        e.stopPropagation();
-        openOrder(o.siparis_no);
-      });
-    }
+// Satır tıklaması — tüm tablarda aktif
+tr.addEventListener("click", (e) => {
+
+  // Eğer butona tıklandıysa işlemi durdur
+  // (Sorgula veya Aç — btn-open sınıfı)
+  if (e.target.classList.contains("btn-open")) return;
+
+  // Satıra tıklanırsa siparişi aç
+  openOrder(o.siparis_no);
+});
+
 
     tbody.appendChild(tr);
   });
