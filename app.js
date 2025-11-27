@@ -113,9 +113,12 @@ function renderTable(rows){
     ? (o.shipmentStatus ?? "—")
     : o.kargo_durumu;
 
-    const actionBtn = currentTab==="kargolandi"
-      ? `<button class="btn-open" onclick="event.stopPropagation(); openTrackingUrl('${o.kargo_takip_url ?? ""}')">Sorgula</button>`
-      : `<button class="btn-open">Aç</button>`;
+    const isTrackingTab = ["kargolandi", "tamamlandi", "sorunlu"].includes(currentTab);
+
+const actionBtn = isTrackingTab
+  ? `<button class="btn-open" onclick="event.stopPropagation(); openTrackingUrl('${o.kargo_takip_url ?? ""}')">Sorgula</button>`
+  : `<button class="btn-open">Aç</button>`;
+
 
     tr.innerHTML = `
       <td>${o.siparis_no}</td>
