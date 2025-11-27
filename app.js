@@ -239,25 +239,96 @@ function renderDetails(){
 /* ============================================================
    ŞEHİR/İLÇE KODU SOR
 ============================================================ */
-async function queryCityDistrictCodes(){
+async function queryCityDistrictCodes() {
   toast("Kodlar sorgulanıyor...");
 
-  const res = await fetch(WH_SEHIR_ILCE, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify(selectedOrder)
-  });
-  if(!res.ok) return toast("Kod bulunamadı");
+  const cityName = selectedOrder.sehir?.trim();
+  const districtName = selectedOrder.ilce?.trim();
 
-  const d = await res.json();
+  if (!cityName || !districtName) {
+    return toast("Şehir veya ilçe bilgisi eksik!");
+  }
 
-  await db.from(TABLE)
-    .update({ sehir_kodu:d.sehir_kodu, ilce_kodu:d.ilce_kodu })
+  // === Türkçe karakterleri normalize eden fonksiyon ===
+  const normalize = (str) => {
+    return (str || "")
+      .toLowerCase()
+      .replace(/ç/g, "c")
+      .replace(/ğ/g, "g")
+      .replace(/ı/g, "i")
+      .replace(/ö/g, "o")
+      .replace(/ş/g, "s")
+      .replace(/ü/g, "u")
+      .replace(/[^a-z0-9]/g, "");
+  };
+
+  const normCity = normalize(cityName);
+  const normDistrict = normalize(districtName);
+
+  // === Tüm şehirleri çekiyoruz ===
+  const { data: cityRows, error: cityErr } = await db
+    .from("sehir")
+    .select("id, name");
+
+  if (cityErr || !cityRows) {
+    return toast("Şehir listesi alınamadı!");
+  }
+
+  // === Normalize karşılaştırma ile şehir bul ===
+  let foundCity = null;
+  for (const c of cityRows) {
+    if (normalize(c.name) === normCity) {
+      foundCity = c;
+      break;
+    }
+  }
+
+  if (!foundCity) {
+    return toast("Şehir bulunamadı: " + cityName);
+  }
+
+  const sehir_kodu = foundCity.id;
+
+  // === İlçeleri çek (sadece bu şehre ait) ===
+  const { data: distRows, error: distErr } = await db
+    .from("ilce")
+    .select("code, name")
+    .eq("city_id", sehir_kodu);
+
+  if (distErr || !distRows) {
+    return toast("İlçe listesi alınamadı!");
+  }
+
+  // === İlçe eşle → normalize ederek ===
+  let foundDistrict = null;
+  for (const i of distRows) {
+    if (normalize(i.name) === normDistrict) {
+      foundDistrict = i;
+      break;
+    }
+  }
+
+  if (!foundDistrict) {
+    return toast("İlçe bulunamadı: " + districtName);
+  }
+
+  const ilce_kodu = foundDistrict.code;
+
+  // === Supabase'de siparişi güncelle ===
+  await db
+    .from(TABLE)
+    .update({
+      sehir_kodu,
+      ilce_kodu
+    })
     .eq("siparis_no", selectedOrder.siparis_no);
 
-  toast("Kodlar güncellendi");
+  toast("Kodlar güncellendi ✔");
+
+  // Güncellenmiş halini tekrar aç
   openOrder(selectedOrder.siparis_no);
 }
+
 
 /* ============================================================
    DÜZENLEME
