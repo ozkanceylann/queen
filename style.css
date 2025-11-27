@@ -109,7 +109,7 @@ body{
 }
 
 .modal-content {
-  width: min(700px, 95%);          /* daha dar → kare görünüm kaybolur */
+  width: min(650px, 100%);          /* daha dar → kare görünüm kaybolur */
   max-height: 92vh;                /* daha uzun modal, tam ekranın %92'si */
   overflow-y: auto;                /* içerik taşarsa scroll */
   background: #fff;
