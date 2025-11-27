@@ -109,7 +109,9 @@ function renderTable(rows){
   rows.forEach(o=>{
     const tr = document.createElement("tr");
 
-    const durumText = currentTab==="kargolandi" ? (o.shipmentStatus ?? "—") : o.kargo_durumu;
+   const durumText = ["kargolandi", "tamamlandi", "sorunlu"].includes(currentTab)
+    ? (o.shipmentStatus ?? "—")
+    : o.kargo_durumu;
 
     const actionBtn = currentTab==="kargolandi"
       ? `<button class="btn-open" onclick="event.stopPropagation(); openTrackingUrl('${o.kargo_takip_url ?? ""}')">Sorgula</button>`
