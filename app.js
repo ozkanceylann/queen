@@ -553,3 +553,22 @@ document.addEventListener("click", e=>{
    BAŞLAT
 ============================================================ */
 loadOrders(true);
+
+// === HTML onclick'leri görebilsin diye global'e aç ===
+Object.assign(window, {
+  // genel
+  logout, loadOrders, setTab, searchOrders, clearSearch, toggleMenu,
+
+  // tablo / link
+  openOrder, closeModal, openTracking,
+
+  // durumlar
+  markPrepared, sendToCargo, printBarcode, setWaiting,
+
+  // düzenleme
+  enterEditMode, saveEdit, cancelEdit,
+
+  // iptal / geri al
+  openCancelForm, cancelCancelForm, confirmCancel, restoreOrder,
+});
+
