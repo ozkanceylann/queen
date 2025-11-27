@@ -167,7 +167,7 @@ async function openOrder(id){
 }
 function closeModal(){ document.getElementById("orderModal").style.display = "none"; }
 
-function renderDetails(){
+function renderDetails() {
   const d = selectedOrder;
 
   /* — ÖNCE TÜM BUTONLARI SIFIRLA — */
@@ -175,6 +175,7 @@ function renderDetails(){
     btn.style.display = "inline-block";
   });
 
+  // DETAY HTML
   document.getElementById("orderDetails").innerHTML = `
     <p><b>No:</b> ${d.siparis_no}</p>
     <p><b>İsim:</b> ${d.ad_soyad}</p>
@@ -195,39 +196,48 @@ function renderDetails(){
     <p><b>Ödeme:</b> ${d.odeme_sekli}</p>
     <p><b>Not:</b> ${d.notlar ?? "-"}</p>
   `;
-   // ==== SOR butonu kontrolü ====
-try {
-  const sorBtn = document.querySelector(".btn-mini");
-  if (sorBtn) {
-    if (["Bekliyor", "Hazırlandı"].includes(d.kargo_durumu)) {
-      sorBtn.style.display = "inline-block";
-    } else {
-      sorBtn.style.display = "none";
+
+  /* === SOR butonu kontrolü === */
+  try {
+    const sorBtn = document.querySelector(".btn-mini");
+    if (sorBtn) {
+      if (["Bekliyor", "Hazırlandı"].includes(d.kargo_durumu)) {
+        sorBtn.style.display = "inline-block";
+      } else {
+        sorBtn.style.display = "none";
+      }
     }
-  }
-} catch {}
+  } catch (e) {}
 
+  /* === Hazırlandı DURUMUNDA DÜZENLE butonunu gizle === */
+  try {
+    const duzenleBtn = document.querySelector("#actionButtons .btn-warning");
+    if (duzenleBtn && d.kargo_durumu === "Hazırlandı") {
+      duzenleBtn.style.display = "none";
+    }
+  } catch (e) {}
 
-  const iptal = d.kargo_durumu==="İptal";
-  const kargo = d.kargo_durumu==="Kargolandı";
-  const tamam = d.kargo_durumu==="Tamamlandı";
+  /* — DURUM KURALLARI — */
+
+  const iptal = d.kargo_durumu === "İptal";
+  const kargo = d.kargo_durumu === "Kargolandı";
+  const tamam = d.kargo_durumu === "Tamamlandı";
 
   /* BEKLEYEN — HAZIRLANDI — VS DURUMLARI */
   document.getElementById("btnPrepare").style.display =
-    (d.kargo_durumu==="Bekliyor") ? "inline-block" : "none";
+    (d.kargo_durumu === "Bekliyor") ? "inline-block" : "none";
 
   document.getElementById("btnCargo").style.display =
-    (d.kargo_durumu==="Hazırlandı") ? "inline-block" : "none";
+    (d.kargo_durumu === "Hazırlandı") ? "inline-block" : "none";
 
   document.getElementById("btnBarcode").style.display =
     kargo ? "inline-block" : "none";
 
   document.getElementById("btnWaiting").style.display =
-    (!["Bekliyor","Kargolandı"].includes(d.kargo_durumu)) ? "inline-block" : "none";
+    (!["BekBekliyor", "Kargolandı"].includes(d.kargo_durumu)) ? "inline-block" : "none";
 
-
-  /* — KARGOLANDI DURUMUNDA — (Queen Kuralları) */
-  if(kargo){
+  /* — KARGOLANDI — düzenle ve diğer butonlar kapalı */
+  if (kargo) {
     document.querySelector("#actionButtons .btn-warning").style.display = "none"; // düzenle
     document.getElementById("btnPrepare").style.display = "none";
     document.getElementById("btnCargo").style.display = "none";
@@ -235,18 +245,19 @@ try {
   }
 
   /* — TAMAMLANAN — sadece kapat */
-  if(tamam){
-    document.querySelectorAll("#actionButtons button").forEach(btn=>btn.style.display="none");
+  if (tamam) {
+    document.querySelectorAll("#actionButtons button").forEach(btn => btn.style.display = "none");
     document.querySelector("#actionButtons .btn-close").style.display = "inline-block";
   }
 
   /* — İPTAL DURUMU — */
-  document.getElementById("actionButtons").style.display = iptal ? "none":"flex";
-  document.getElementById("restoreButtons").style.display= iptal ? "flex":"none";
+  document.getElementById("actionButtons").style.display = iptal ? "none" : "flex";
+  document.getElementById("restoreButtons").style.display = iptal ? "flex" : "none";
 
-  document.getElementById("editButtons").style.display="none";
-  document.getElementById("cancelForm").style.display="none";
+  document.getElementById("editButtons").style.display = "none";
+  document.getElementById("cancelForm").style.display = "none";
 }
+
 
 /* ============================================================
    ŞEHİR/İLÇE KODU SOR
