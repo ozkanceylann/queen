@@ -255,17 +255,24 @@ canvas{ max-width:100% }
   .content-area{ margin-left:0!important; padding-top:70px }
   .edit-grid{ grid-template-columns:1fr } /* form tek kolon */
 }
-/* İPTAL MODALINDA BUTON UZAMASINI ENGELLE */
-#cancelForm .modal-btns button {
-  flex: 0 0 auto !important;
-  width: auto !important;
-  min-width: 120px !important;
+#actionButtons {
+  display: flex;
+  flex-wrap: wrap;        /* Alt satır oluşturmaya izin ver */
+  gap: 10px;
 }
 
-#cancelForm .modal-btns {
-  justify-content: flex-end !important;
+#actionButtons button {
+  flex: 0 0 auto;         /* Üst satırdaki butonlar sabit genişlik */
 }
-/* İptal Et butonu her zaman üst satırda, diğer butonlarla aynı hizada olsun */
+
+/* Kapat butonu altta tek satır */
+#actionButtons .btn-close {
+  flex-basis: 100%;
+  order: 99;
+  justify-content: center;
+}
+
+/* İptal Et butonu mutlaka üst satırda */
 #actionButtons .btn-danger {
-  order: 5 !important;
+  order: 1;
 }
