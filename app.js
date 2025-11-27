@@ -13,7 +13,7 @@ const SUPABASE_KEY =
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ============================================================
-   MARKA AYARLARI
+   MARKA AYARLARI (brand.config.json)
 ============================================================ */
 const TABLE         = CONFIG.table;
 const WH_KARGOLA    = CONFIG.webhooks.kargola;
@@ -22,7 +22,7 @@ const WH_IPTAL      = CONFIG.webhooks.iptal;
 const WH_SEHIR_ILCE = CONFIG.webhooks.sehir_ilce;
 
 /* ============================================================
-   GLOBAL DEĞİŞKENLER
+   GLOBAL STATE
 ============================================================ */
 let currentTab = "bekleyen";
 let currentPage = 1;
@@ -30,7 +30,7 @@ let selectedOrder = null;
 const busy = { kargola: new Set(), barkod: new Set() };
 
 /* ============================================================
-   TOAST ve ALERT
+   UI HELPERS
 ============================================================ */
 function toast(msg, ms=2500){
   const t = document.createElement("div");
@@ -48,7 +48,7 @@ function confirmModal({title, text, confirmText="Onayla", cancelText="Vazgeç"})
     wrap.innerHTML = `
       <div class="alert-card">
         <div class="alert-title">${title}</div>
-        <div class="alert-text">${text.replace(/\n/g,"<br>")}</div>
+        <div class="alert-text">${(text||"").replace(/\n/g,"<br>")}</div>
         <div class="alert-actions">
           <button class="btn-ghost" id="cCancel">${cancelText}</button>
           <button class="btn-brand" id="cOk">${confirmText}</button>
@@ -60,27 +60,13 @@ function confirmModal({title, text, confirmText="Onayla", cancelText="Vazgeç"})
   });
 }
 
-/* ============================================================
-   LOGOUT
-============================================================ */
 function logout(){
   localStorage.clear();
-  window.location.href = "login.html";
-}
-
-
-async function setWaiting(){
-  await db.from(TABLE)
-    .update({ kargo_durumu: "Bekliyor" })
-    .eq("siparis_no", selectedOrder.siparis_no);
-
-  toast("Sipariş Bekliyor olarak güncellendi");
-  closeModal();
-  loadOrders(true);
+  location.href = "login.html";
 }
 
 /* ============================================================
-   SİPARİŞ LİSTELEME
+   LİSTELEME
 ============================================================ */
 async function loadOrders(reset=false){
   const tbody = document.getElementById("ordersBody");
@@ -91,7 +77,6 @@ async function loadOrders(reset=false){
 
   let q = db.from(TABLE).select("*");
 
-  // Tab filtreleri
   if(currentTab==="bekleyen")   q = q.eq("kargo_durumu","Bekliyor");
   if(currentTab==="hazirlandi") q = q.eq("kargo_durumu","Hazırlandı");
   if(currentTab==="kargolandi") q = q.eq("kargo_durumu","Kargolandı");
@@ -100,45 +85,33 @@ async function loadOrders(reset=false){
   if(currentTab==="iptal")      q = q.eq("kargo_durumu","İptal");
 
   q = q.order("siparis_no", { ascending:false })
-       .range(0, currentPage * 20 - 1);
+       .range(0, currentPage*20 - 1);
 
   const { data, error } = await q;
-
   if(error){
     tbody.innerHTML = `<tr><td colspan="7">HATA: ${error.message}</td></tr>`;
     return;
   }
-
   renderTable(data);
 }
 
-/* ============================================================
-   TABLO RENDER
-============================================================ */
 function renderTable(rows){
   const tbody = document.getElementById("ordersBody");
   tbody.innerHTML = "";
 
-  if(!rows || rows.length === 0){
+  if(!rows || rows.length===0){
     tbody.innerHTML = `<tr><td colspan="7">Kayıt bulunamadı</td></tr>`;
     return;
   }
 
   rows.forEach(o=>{
-
     const tr = document.createElement("tr");
 
-    // Durum
-    const durumText =
-      currentTab === "kargolandi"
-        ? (o.shipmentStatus ?? "—")
-        : o.kargo_durumu;
+    const durumText = currentTab==="kargolandi" ? (o.shipmentStatus ?? "—") : o.kargo_durumu;
 
-    // Buton
-    const actionBtn =
-      currentTab === "kargolandi"
-        ? `<button class="btn-open" onclick="event.stopPropagation(); openTracking('${o.kargo_takip_url ?? ""}')">Sorgula</button>`
-        : `<button class="btn-open">Aç</button>`;
+    const actionBtn = currentTab==="kargolandi"
+      ? `<button class="btn-open" onclick="event.stopPropagation(); openTrackingUrl('${o.kargo_takip_url ?? ""}')">Sorgula</button>`
+      : `<button class="btn-open">Aç</button>`;
 
     tr.innerHTML = `
       <td>${o.siparis_no}</td>
@@ -150,7 +123,6 @@ function renderTable(rows){
       <td>${actionBtn}</td>
     `;
 
-    // Satıra tıklayınca aç
     tr.addEventListener("click", (e)=>{
       if(e.target.classList.contains("btn-open")) return;
       openOrder(o.siparis_no);
@@ -160,46 +132,34 @@ function renderTable(rows){
   });
 }
 
-/* ============================================================
-   ÜRÜN PARSE
-============================================================ */
 function parseProduct(v){
   if(!v) return "-";
-  try {
-    if(v.startsWith("[") && v.endsWith("]"))
-      return JSON.parse(v).join(", ");
-  } catch{}
+  try{
+    if(v.startsWith("[") && v.endsWith("]")) return JSON.parse(v).join(", ");
+  }catch{}
   return v;
 }
 
 /* ============================================================
-   KARGO TAKİP LİNKİ
+   KARGO SORGULAMA
 ============================================================ */
-function openTracking(url){
+function openTrackingUrl(url){
   if(!url) return toast("Kargo sorgulama linki yok.");
   window.open(url, "_blank");
 }
 
 /* ============================================================
-   DETAY AÇMA
+   DETAY
 ============================================================ */
 async function openOrder(id){
   const { data } = await db.from(TABLE).select("*").eq("siparis_no", id).single();
   if(!data) return toast("Sipariş bulunamadı!");
-
   selectedOrder = data;
   renderDetails();
-
   document.getElementById("orderModal").style.display = "flex";
 }
+function closeModal(){ document.getElementById("orderModal").style.display = "none"; }
 
-function closeModal(){
-  document.getElementById("orderModal").style.display = "none";
-}
-
-/* ============================================================
-   DETAY RENDER
-============================================================ */
 function renderDetails(){
   const d = selectedOrder;
   document.getElementById("orderDetails").innerHTML = `
@@ -211,7 +171,7 @@ function renderDetails(){
 
     <p>
       <b>Şehir / İlçe:</b> ${d.sehir} / ${d.ilce}
-      <button class="btn-mini" onclick="queryCityDistrict()">Sor</button>
+      <button class="btn-mini" onclick="queryCityDistrictCodes()">Sor</button>
       <br><small>Kodlar: ${d.sehir_kodu ?? "-"} / ${d.ilce_kodu ?? "-"}</small>
     </p>
 
@@ -223,20 +183,16 @@ function renderDetails(){
     <p><b>Not:</b> ${d.notlar ?? "-"}</p>
   `;
 
-  const iptal = d.kargo_durumu === "İptal";
-  const kargo = d.kargo_durumu === "Kargolandı";
-  const tamam = d.kargo_durumu === "Tamamlandı";
+  const iptal = d.kargo_durumu==="İptal";
+  const kargo = d.kargo_durumu==="Kargolandı";
+  const tamam = d.kargo_durumu==="Tamamlandı";
 
-  // Butonları ayarla
   document.getElementById("btnPrepare").style.display =
-    d.kargo_durumu === "Bekliyor" ? "inline-block" : "none";
-
+    d.kargo_durumu==="Bekliyor" ? "inline-block" : "none";
   document.getElementById("btnCargo").style.display =
-    d.kargo_durumu === "Hazırlandı" ? "inline-block" : "none";
-
+    d.kargo_durumu==="Hazırlandı" ? "inline-block" : "none";
   document.getElementById("btnBarcode").style.display =
     kargo ? "inline-block" : "none";
-
   document.getElementById("btnWaiting").style.display =
     (!["Bekliyor","Kargolandı"].includes(d.kargo_durumu)) ? "inline-block" : "none";
 
@@ -257,9 +213,9 @@ function renderDetails(){
 }
 
 /* ============================================================
-   ŞEHİR / İLÇE Sorgu
+   ŞEHİR/İLÇE KODU SOR (Queen isimlendirmesiyle)
 ============================================================ */
-async function queryCityDistrict(){
+async function queryCityDistrictCodes(){
   toast("Kodlar sorgulanıyor...");
 
   const res = await fetch(WH_SEHIR_ILCE, {
@@ -267,7 +223,6 @@ async function queryCityDistrict(){
     headers:{ "Content-Type":"application/json" },
     body: JSON.stringify(selectedOrder)
   });
-
   if(!res.ok) return toast("Kod bulunamadı");
 
   const d = await res.json();
@@ -277,67 +232,42 @@ async function queryCityDistrict(){
     .eq("siparis_no", selectedOrder.siparis_no);
 
   toast("Kodlar güncellendi");
-
   openOrder(selectedOrder.siparis_no);
 }
 
 /* ============================================================
-   DÜZENLEME MODU
+   DÜZENLEME
 ============================================================ */
 function enterEditMode(){
   const d = selectedOrder;
-
   document.getElementById("orderDetails").innerHTML = `
     <div class="edit-grid">
       <div><label>Ad Soyad</label><input id="ad_soyad" value="${d.ad_soyad??""}"></div>
       <div><label>Sipariş Tel</label><input id="siparis_tel" value="${d.siparis_tel??""}"></div>
       <div><label>Müşteri Tel</label><input id="musteri_tel" value="${d.musteri_tel??""}"></div>
-
       <div class="full-row"><label>Adres</label><textarea id="adres">${d.adres??""}</textarea></div>
-
       <div><label>Şehir</label><input id="sehir" value="${d.sehir??""}"></div>
       <div><label>İlçe</label><input id="ilce" value="${d.ilce??""}"></div>
-
       <div><label>Kargo Adet</label><input id="kargo_adet" value="${d.kargo_adet??""}"></div>
       <div><label>Kargo KG</label><input id="kargo_kg" value="${d.kargo_kg??""}"></div>
-
       <div class="full-row"><label>Ürün</label><textarea id="urun_bilgisi">${d.urun_bilgisi??""}</textarea></div>
-
       <div><label>Tutar</label><input id="toplam_tutar" value="${d.toplam_tutar??""}"></div>
       <div><label>Ödeme</label><input id="odeme_sekli" value="${d.odeme_sekli??""}"></div>
-
       <div class="full-row"><label>Not</label><textarea id="notlar">${d.notlar??""}</textarea></div>
-    </div>
-  `;
-
+    </div>`;
   document.getElementById("actionButtons").style.display = "none";
   document.getElementById("editButtons").style.display = "flex";
 }
 
 async function saveEdit(){
   const updated = {
-    ad_soyad: ad_soyad.value,
-    siparis_tel: siparis_tel.value,
-    musteri_tel: musteri_tel.value,
-
-    adres: adres.value,
-    sehir: sehir.value,
-    ilce: ilce.value,
-
-    kargo_adet: kargo_adet.value,
-    kargo_kg: kargo_kg.value,
-
-    urun_bilgisi: urun_bilgisi.value,
-    toplam_tutar: toplam_tutar.value,
-
-    odeme_sekli: odeme_sekli.value,
-    notlar: notlar.value
+    ad_soyad: ad_soyad.value, siparis_tel: siparis_tel.value, musteri_tel: musteri_tel.value,
+    adres: adres.value, sehir: sehir.value, ilce: ilce.value,
+    kargo_adet: kargo_adet.value, kargo_kg: kargo_kg.value,
+    urun_bilgisi: urun_bilgisi.value, toplam_tutar: toplam_tutar.value,
+    odeme_sekli: odeme_sekli.value, notlar: notlar.value
   };
-
-  await db.from(TABLE)
-    .update(updated)
-    .eq("siparis_no", selectedOrder.siparis_no);
-
+  await db.from(TABLE).update(updated).eq("siparis_no", selectedOrder.siparis_no);
   toast("Kaydedildi");
   closeModal();
   loadOrders(true);
@@ -349,34 +279,37 @@ function cancelEdit(){
   document.getElementById("actionButtons").style.display = "flex";
 }
 
-
-
 /* ============================================================
-   DURUM DEĞİŞİMLERİ
+   DURUMLAR
 ============================================================ */
+async function setWaiting(){
+  await db.from(TABLE)
+    .update({ kargo_durumu: "Bekliyor" })
+    .eq("siparis_no", selectedOrder.siparis_no);
+  toast("Sipariş Bekliyor olarak güncellendi");
+  closeModal();
+  loadOrders(true);
+}
+
 async function markPrepared(){
   await db.from(TABLE)
     .update({ kargo_durumu:"Hazırlandı" })
     .eq("siparis_no", selectedOrder.siparis_no);
 
-  toast("Hazırlandı");
+  // Queen davranışı: Hazırla → fiş kes
+  printSiparis(selectedOrder);
+
+  toast("Sipariş Hazırlandı");
   closeModal();
   loadOrders(true);
 }
 
 async function sendToCargo(){
-  const ok = await confirmModal({
-    title: "Kargoya Gönder",
-    text: "Bu sipariş Kargolandı yapılacak."
-  });
-
+  const ok = await confirmModal({ title:"Kargoya Gönder", text:"Bu sipariş Kargolandı yapılacak." });
   if(!ok) return;
 
   const key = selectedOrder.siparis_no;
-
-  if(busy.kargola.has(key))
-    return toast("Bu sipariş zaten işleniyor.");
-
+  if(busy.kargola.has(key)) return toast("Bu sipariş zaten işleniyor.");
   busy.kargola.add(key);
 
   try{
@@ -385,30 +318,20 @@ async function sendToCargo(){
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify(selectedOrder)
     });
-
     toast("Kargoya gönderildi.");
-
   }catch(e){
     toast("Gönderim hatası");
-
   }finally{
-    setTimeout(() => busy.kargola.delete(key), 30000);
+    setTimeout(()=>busy.kargola.delete(key), 30000);
   }
 }
 
 async function printBarcode(){
-  const ok = await confirmModal({
-    title: "Barkod Kes",
-    text: "Barkod isteği gönderilecek."
-  });
-
+  const ok = await confirmModal({ title:"Barkod Kes", text:"Barkod isteği gönderilecek." });
   if(!ok) return;
 
   const key = selectedOrder.siparis_no;
-
-  if(busy.barkod.has(key))
-    return toast("Barkod zaten bekliyor");
-
+  if(busy.barkod.has(key)) return toast("Barkod zaten bekliyor");
   busy.barkod.add(key);
 
   try{
@@ -417,14 +340,11 @@ async function printBarcode(){
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify(selectedOrder)
     });
-
     toast("Barkod gönderildi");
-
   }catch(e){
     toast("Barkod hatası!");
-
   }finally{
-    setTimeout(() => busy.barkod.delete(key), 20000);
+    setTimeout(()=>busy.barkod.delete(key), 20000);
   }
 }
 
@@ -435,17 +355,13 @@ function openCancelForm(){
   document.getElementById("cancelForm").style.display = "block";
   document.getElementById("actionButtons").style.display = "none";
 }
-
 function cancelCancelForm(){
   document.getElementById("cancelForm").style.display = "none";
   document.getElementById("actionButtons").style.display = "flex";
 }
-
 async function confirmCancel(){
   const reason = document.getElementById("iptalInput").value.trim();
-
-  if(!reason)
-    return toast("İptal nedeni gerekli");
+  if(!reason) return toast("İptal nedeni gerekli");
 
   await fetch(WH_IPTAL, {
     method:"POST",
@@ -453,27 +369,22 @@ async function confirmCancel(){
     body: JSON.stringify({ ...selectedOrder, reason })
   });
 
-  await db.from(TABLE)
-    .update({
-      kargo_durumu:"İptal",
-      iptal_nedeni: reason,
-      iptal_tarihi: new Date().toISOString()
-    })
-    .eq("siparis_no", selectedOrder.siparis_no);
+  await db.from(TABLE).update({
+    kargo_durumu:"İptal",
+    iptal_nedeni: reason,
+    iptal_tarihi: new Date().toISOString()
+  }).eq("siparis_no", selectedOrder.siparis_no);
 
   toast("Sipariş iptal edildi");
   closeModal();
   loadOrders(true);
 }
-
 async function restoreOrder(){
-  await db.from(TABLE)
-    .update({
-      kargo_durumu:"Bekliyor",
-      iptal_nedeni:null,
-      iptal_tarihi:null
-    })
-    .eq("siparis_no", selectedOrder.siparis_no);
+  await db.from(TABLE).update({
+    kargo_durumu:"Bekliyor",
+    iptal_nedeni:null,
+    iptal_tarihi:null
+  }).eq("siparis_no", selectedOrder.siparis_no);
 
   toast("Sipariş geri alındı");
   closeModal();
@@ -485,90 +396,116 @@ async function restoreOrder(){
 ============================================================ */
 async function searchOrders(){
   const q = document.getElementById("searchInput").value.trim();
-
   if(!q) return loadOrders(true);
 
-  const { data } = await db
-    .from(TABLE)
-    .select("*")
-    .or(`
-      siparis_no.eq.${q},
-      ad_soyad.ilike.%${q}%,
-      siparis_tel.ilike.%${q}%,
-      musteri_tel.ilike.%${q}%,
-      adres.ilike.%${q}%,
-      kargo_takip_kodu.ilike.%${q}%
-    `);
-
+  const { data } = await db.from(TABLE).select("*").or(`
+    siparis_no.eq.${q},
+    ad_soyad.ilike.%${q}%,
+    siparis_tel.ilike.%${q}%,
+    musteri_tel.ilike.%${q}%,
+    adres.ilike.%${q}%,
+    kargo_takip_kodu.ilike.%${q}%
+  `);
   renderTable(data);
 }
-
-function clearSearch(){
-  document.getElementById("searchInput").value="";
-  loadOrders(true);
-}
+function clearSearch(){ document.getElementById("searchInput").value=""; loadOrders(true); }
 
 /* ============================================================
-   TAB
+   TAB / LOAD MORE / MOBİL MENÜ
 ============================================================ */
 function setTab(tab){
   currentTab = tab;
-
-  document
-    .querySelectorAll(".menu li")
-    .forEach(li => li.classList.remove("active"));
-
+  document.querySelectorAll(".menu li").forEach(li=>li.classList.remove("active"));
   const el = document.getElementById(`tab_${tab}`);
   if(el) el.classList.add("active");
-
   loadOrders(true);
 }
+function loadMore(){ currentPage++; loadOrders(false); }
 
-/* ============================================================
-   DAHA FAZLA
-============================================================ */
-function loadMore(){
-  currentPage++;
-  loadOrders(false);
-}
-
-/* ============================================================
-   MOBİL MENU
-============================================================ */
-function toggleMenu(){
-  document.querySelector(".sidebar").classList.toggle("open");
-}
-
+function toggleMenu(){ document.querySelector(".sidebar").classList.toggle("open"); }
 document.addEventListener("click", e=>{
   const sidebar = document.querySelector(".sidebar");
   const btn = document.querySelector(".mobile-menu-btn");
-
   if(!sidebar.classList.contains("open")) return;
   if(sidebar.contains(e.target) || btn.contains(e.target)) return;
-
   sidebar.classList.remove("open");
 });
 
 /* ============================================================
-   BAŞLAT
+   FİŞ (Adisyon) — Queen davranışı
 ============================================================ */
-loadOrders(true);
+function printSiparis(order){
+  // adisyon_print.html içinde #content ve window.doPrint() var.
+  const w = window.open("adisyon_print.html", "_blank");
+  if(!w){ toast("Pop-up engellendi. Lütfen bu site için pop-up izni verin."); return; }
 
-// === HTML onclick'leri görebilsin diye global'e aç ===
+  const html = `
+    <div style="font-size:12px">
+      <div><b>No:</b> ${order.siparis_no}</div>
+      <div><b>İsim:</b> ${order.ad_soyad}</div>
+      <div><b>Tel:</b> ${order.musteri_tel ?? ""}</div>
+      <div><b>Adres:</b> ${order.adres ?? ""}</div>
+      <div><b>Şehir/İlçe:</b> ${order.sehir ?? ""} / ${order.ilce ?? ""}</div>
+      <div style="margin:6px 0;border-bottom:1px dashed #000;"></div>
+      <div><b>Ürünler:</b> ${parseProduct(order.urun_bilgisi)}</div>
+      <div><b>Adet:</b> ${order.kargo_adet ?? "-"}</div>
+      <div><b>KG:</b> ${order.kargo_kg ?? "-"}</div>
+      <div><b>Tutar:</b> ${order.toplam_tutar} TL</div>
+      <div><b>Ödeme:</b> ${order.odeme_sekli ?? "-"}</div>
+      <div><b>Not:</b> ${order.notlar ?? "-"}</div>
+    </div>`;
+
+  const inject = ()=>{
+    try{
+      const el = w.document.getElementById("content");
+      if(el){
+        el.innerHTML = html;
+        if(typeof w.doPrint === "function") w.doPrint();
+        else w.print();
+        return true;
+      }
+      return false;
+    }catch{ return false; }
+  };
+
+  // pencere hazır olana kadar dene
+  let tries = 0;
+  const t = setInterval(()=>{
+    tries++;
+    if(inject() || tries>40) clearInterval(t);
+  }, 100);
+}
+
+/* ============================================================
+   GLOBAL EXPORT (module → onclick için şart)
+============================================================ */
 Object.assign(window, {
   // genel
   logout, loadOrders, setTab, searchOrders, clearSearch, toggleMenu,
 
-  // tablo / link
-  openOrder, closeModal, openTracking,
+  // satır / detay
+  openOrder, closeModal,
+
+  // linkler
+  openTrackingUrl,
 
   // durumlar
-  markPrepared, sendToCargo, printBarcode, setWaiting,
+  setWaiting, markPrepared, sendToCargo, printBarcode,
 
   // düzenleme
   enterEditMode, saveEdit, cancelEdit,
 
   // iptal / geri al
   openCancelForm, cancelCancelForm, confirmCancel, restoreOrder,
+
+  // şehir/ilçe
+  queryCityDistrictCodes,
+
+  // fiş
+  printSiparis,
 });
 
+/* ============================================================
+   BAŞLAT
+============================================================ */
+loadOrders(true);
