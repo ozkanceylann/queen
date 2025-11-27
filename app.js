@@ -13,7 +13,7 @@ const SUPABASE_KEY =
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ============================================================
-   MARKA AYARLARI (brand.config.json)
+   MARKA AYARLARI
 ============================================================ */
 const TABLE         = CONFIG.table;
 const WH_KARGOLA    = CONFIG.webhooks.kargola;
@@ -27,6 +27,7 @@ const WH_SEHIR_ILCE = CONFIG.webhooks.sehir_ilce;
 let currentTab = "bekleyen";
 let currentPage = 1;
 let selectedOrder = null;
+
 const busy = { kargola: new Set(), barkod: new Set() };
 
 /* ============================================================
@@ -92,6 +93,7 @@ async function loadOrders(reset=false){
     tbody.innerHTML = `<tr><td colspan="7">HATA: ${error.message}</td></tr>`;
     return;
   }
+
   renderTable(data);
 }
 
@@ -162,6 +164,12 @@ function closeModal(){ document.getElementById("orderModal").style.display = "no
 
 function renderDetails(){
   const d = selectedOrder;
+
+  /* — ÖNCE TÜM BUTONLARI SIFIRLA — */
+  document.querySelectorAll("#actionButtons button").forEach(btn => {
+    btn.style.display = "inline-block";
+  });
+
   document.getElementById("orderDetails").innerHTML = `
     <p><b>No:</b> ${d.siparis_no}</p>
     <p><b>İsim:</b> ${d.ad_soyad}</p>
@@ -187,33 +195,44 @@ function renderDetails(){
   const kargo = d.kargo_durumu==="Kargolandı";
   const tamam = d.kargo_durumu==="Tamamlandı";
 
+  /* BEKLEYEN — HAZIRLANDI — VS DURUMLARI */
   document.getElementById("btnPrepare").style.display =
-    d.kargo_durumu==="Bekliyor" ? "inline-block" : "none";
+    (d.kargo_durumu==="Bekliyor") ? "inline-block" : "none";
+
   document.getElementById("btnCargo").style.display =
-    d.kargo_durumu==="Hazırlandı" ? "inline-block" : "none";
+    (d.kargo_durumu==="Hazırlandı") ? "inline-block" : "none";
+
   document.getElementById("btnBarcode").style.display =
     kargo ? "inline-block" : "none";
+
   document.getElementById("btnWaiting").style.display =
     (!["Bekliyor","Kargolandı"].includes(d.kargo_durumu)) ? "inline-block" : "none";
 
+
+  /* — KARGOLANDI DURUMUNDA — (Queen Kuralları) */
+  if(kargo){
+    document.querySelector("#actionButtons .btn-warning").style.display = "none"; // düzenle
+    document.getElementById("btnPrepare").style.display = "none";
+    document.getElementById("btnCargo").style.display = "none";
+    document.getElementById("btnWaiting").style.display = "none";
+  }
+
+  /* — TAMAMLANAN — sadece kapat */
+  if(tamam){
+    document.querySelectorAll("#actionButtons button").forEach(btn=>btn.style.display="none");
+    document.querySelector("#actionButtons .btn-close").style.display = "inline-block";
+  }
+
+  /* — İPTAL DURUMU — */
   document.getElementById("actionButtons").style.display = iptal ? "none":"flex";
   document.getElementById("restoreButtons").style.display= iptal ? "flex":"none";
-
-  if(tamam){
-    document.querySelector("#actionButtons .btn-warning").style.display="none";
-    document.querySelector("#actionButtons .btn-danger").style.display="none";
-    document.getElementById("btnPrepare").style.display="none";
-    document.getElementById("btnCargo").style.display="none";
-    document.getElementById("btnBarcode").style.display="none";
-    document.getElementById("btnWaiting").style.display="none";
-  }
 
   document.getElementById("editButtons").style.display="none";
   document.getElementById("cancelForm").style.display="none";
 }
 
 /* ============================================================
-   ŞEHİR/İLÇE KODU SOR (Queen isimlendirmesiyle)
+   ŞEHİR/İLÇE KODU SOR
 ============================================================ */
 async function queryCityDistrictCodes(){
   toast("Kodlar sorgulanıyor...");
@@ -296,7 +315,6 @@ async function markPrepared(){
     .update({ kargo_durumu:"Hazırlandı" })
     .eq("siparis_no", selectedOrder.siparis_no);
 
-  // Queen davranışı: Hazırla → fiş kes
   printSiparis(selectedOrder);
 
   toast("Sipariş Hazırlandı");
@@ -305,7 +323,16 @@ async function markPrepared(){
 }
 
 async function sendToCargo(){
-  const ok = await confirmModal({ title:"Kargoya Gönder", text:"Bu sipariş Kargolandı yapılacak." });
+
+  /* — Queen Tarzı UYARI PENCERESİ — */
+  const ok = await confirmModal({
+    title: "Kargoya Gönder",
+    text: `Bu sipariş KARGOLANDI olarak işaretlenecek ve DHL'e iletilecektir.
+Bu işlem normal şartlarda geri alınamaz ve iptal durumunda kargo firması ek ücret talep edebilir.`,
+    confirmText: "Evet, Kargola",
+    cancelText: "Vazgeç"
+  });
+
   if(!ok) return;
 
   const key = selectedOrder.siparis_no;
@@ -327,7 +354,12 @@ async function sendToCargo(){
 }
 
 async function printBarcode(){
-  const ok = await confirmModal({ title:"Barkod Kes", text:"Barkod isteği gönderilecek." });
+  const ok = await confirmModal({
+    title:"Barkod Kes",
+    text:"Barkod isteği gönderilecek.",
+    confirmText:"Gönder",
+    cancelText:"Vazgeç"
+  });
   if(!ok) return;
 
   const key = selectedOrder.siparis_no;
@@ -355,11 +387,27 @@ function openCancelForm(){
   document.getElementById("cancelForm").style.display = "block";
   document.getElementById("actionButtons").style.display = "none";
 }
+
 function cancelCancelForm(){
   document.getElementById("cancelForm").style.display = "none";
   document.getElementById("actionButtons").style.display = "flex";
 }
+
 async function confirmCancel(){
+
+  /* — QUEEN TARZI UYARI — */
+  const modalOk = await confirmModal({
+    title: "Kargolanmış Siparişi İptal Et",
+    text: `Bu sipariş kargo firmasına gönderilmiş durumda.
+İptal işlemi sonucunda kargo firması tarafından ek ücretler talep edilebilir.
+
+İptal Nedeni (zorunlu)`,
+    confirmText: "İptal Et",
+    cancelText: "Vazgeç"
+  });
+
+  if(!modalOk) return;
+
   const reason = document.getElementById("iptalInput").value.trim();
   if(!reason) return toast("İptal nedeni gerekli");
 
@@ -379,6 +427,7 @@ async function confirmCancel(){
   closeModal();
   loadOrders(true);
 }
+
 async function restoreOrder(){
   await db.from(TABLE).update({
     kargo_durumu:"Bekliyor",
@@ -408,7 +457,11 @@ async function searchOrders(){
   `);
   renderTable(data);
 }
-function clearSearch(){ document.getElementById("searchInput").value=""; loadOrders(true); }
+
+function clearSearch(){
+  document.getElementById("searchInput").value="";
+  loadOrders(true);
+}
 
 /* ============================================================
    TAB / LOAD MORE / MOBİL MENÜ
@@ -420,9 +473,16 @@ function setTab(tab){
   if(el) el.classList.add("active");
   loadOrders(true);
 }
-function loadMore(){ currentPage++; loadOrders(false); }
 
-function toggleMenu(){ document.querySelector(".sidebar").classList.toggle("open"); }
+function loadMore(){
+  currentPage++;
+  loadOrders(false);
+}
+
+function toggleMenu(){
+  document.querySelector(".sidebar").classList.toggle("open");
+}
+
 document.addEventListener("click", e=>{
   const sidebar = document.querySelector(".sidebar");
   const btn = document.querySelector(".mobile-menu-btn");
@@ -432,10 +492,9 @@ document.addEventListener("click", e=>{
 });
 
 /* ============================================================
-   FİŞ (Adisyon) — Queen davranışı
+   FİŞ (Adisyon)
 ============================================================ */
 function printSiparis(order){
-  // adisyon_print.html içinde #content ve window.doPrint() var.
   const w = window.open("adisyon_print.html", "_blank");
   if(!w){ toast("Pop-up engellendi. Lütfen bu site için pop-up izni verin."); return; }
 
@@ -468,7 +527,6 @@ function printSiparis(order){
     }catch{ return false; }
   };
 
-  // pencere hazır olana kadar dene
   let tries = 0;
   const t = setInterval(()=>{
     tries++;
@@ -477,31 +535,37 @@ function printSiparis(order){
 }
 
 /* ============================================================
-   GLOBAL EXPORT (module → onclick için şart)
+   GLOBAL EXPORT
 ============================================================ */
 Object.assign(window, {
-  // genel
-  logout, loadOrders, setTab, searchOrders, clearSearch, toggleMenu,
+  logout,
+  loadOrders,
+  setTab,
+  searchOrders,
+  clearSearch,
+  toggleMenu,
 
-  // satır / detay
-  openOrder, closeModal,
+  openOrder,
+  closeModal,
 
-  // linkler
   openTrackingUrl,
 
-  // durumlar
-  setWaiting, markPrepared, sendToCargo, printBarcode,
+  setWaiting,
+  markPrepared,
+  sendToCargo,
+  printBarcode,
 
-  // düzenleme
-  enterEditMode, saveEdit, cancelEdit,
+  enterEditMode,
+  saveEdit,
+  cancelEdit,
 
-  // iptal / geri al
-  openCancelForm, cancelCancelForm, confirmCancel, restoreOrder,
+  openCancelForm,
+  cancelCancelForm,
+  confirmCancel,
+  restoreOrder,
 
-  // şehir/ilçe
   queryCityDistrictCodes,
 
-  // fiş
   printSiparis,
 });
 
@@ -509,3 +573,4 @@ Object.assign(window, {
    BAŞLAT
 ============================================================ */
 loadOrders(true);
+
