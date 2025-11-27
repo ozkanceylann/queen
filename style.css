@@ -265,3 +265,7 @@ canvas{ max-width:100% }
 #cancelForm .modal-btns {
   justify-content: flex-end !important;
 }
+/* İptal Et butonu her zaman üst satırda, diğer butonlarla aynı hizada olsun */
+#actionButtons .btn-danger {
+  order: 5 !important;
+}
