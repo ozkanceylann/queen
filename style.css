@@ -262,3 +262,6 @@ canvas{ max-width:100% }
   min-width: 120px !important;
 }
 
+#cancelForm .modal-btns {
+  justify-content: flex-end !important;
+}
