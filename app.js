@@ -727,15 +727,6 @@ Bu işlem normal şartlarda geri alınamaz ve iptal durumunda kargo firması ek 
 }
 
 async function printBarcode(){
-
-  // 1) BARKOD SAYFASINI AÇ
-  const w = window.open("barkod_print.html", "_blank");
-  if(!w){
-    toast("Pop-up engellendi. Lütfen izin verin.");
-    return;
-  }
-
-  // 2) DEVAM EDEN NORMAL BARKOD GÖNDERME
   const ok = await confirmModal({
     title:"Barkod Kes",
     text:"Barkod isteği gönderilecek.",
@@ -749,19 +740,11 @@ async function printBarcode(){
   busy.barkod.add(key);
 
   try{
-    // webhook'a gönder
-    const res = await fetch(WH_BARKOD, {
+    await fetch(WH_BARKOD, {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify(selectedOrder)
     });
-
-    // n8n geri PNG base64 yollar ise → barkod penceresine ilet
-    const data = await res.json();
-    if(data?.barcode){
-      w.showBarcode(data.barcode);   // barkod_print.html içindeki fonksiyon
-    }
-
     toast("Barkod gönderildi");
   }catch(e){
     toast("Barkod hatası!");
