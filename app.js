@@ -84,6 +84,16 @@ function toggleLoadMore(visible){
   btn.style.display = visible ? "block" : "none";
 }
 
+// Sidebar menü tıklanınca otomatik kapanması (mobil)
+document.querySelectorAll(".sidebar .menu li").forEach(item => {
+  item.addEventListener("click", () => {
+    const sidebar = document.querySelector(".sidebar");
+    if (sidebar.classList.contains("open")) {
+      sidebar.classList.remove("open"); // KAPAT
+    }
+  });
+});
+
 function confirmModal({title, text, confirmText="Onayla", cancelText="Vazgeç"}){
   return new Promise(res=>{
     const root = document.getElementById("alertRoot");
