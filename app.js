@@ -288,8 +288,10 @@ async function deleteCanceledOrder() {
 
   toast("Sipariş silindi");
   closeModal();
-  loadOrders(true);
+
+  setTimeout(() => loadOrders(true), 1000);
 }
+
 
 
 
@@ -718,9 +720,11 @@ async function setWaiting(){
   await db.from(TABLE)
     .update({ kargo_durumu: "Bekliyor" })
     .eq("siparis_no", selectedOrder.siparis_no);
+
   toast("Sipariş Bekliyor olarak güncellendi");
   closeModal();
-  loadOrders(true);
+
+  setTimeout(() => loadOrders(true), 1000);
 }
 
 async function markPrepared(){
@@ -732,8 +736,10 @@ async function markPrepared(){
 
   toast("Sipariş Hazırlandı");
   closeModal();
-  loadOrders(true);
+
+  setTimeout(() => loadOrders(true), 1000);
 }
+
 
 async function sendToCargo(){
 
@@ -758,13 +764,21 @@ Bu işlem normal şartlarda geri alınamaz ve iptal durumunda kargo firması ek 
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify(selectedOrder)
     });
+
     toast("Kargoya gönderildi.");
+
+    // 🔥 1 saniye sonra listeyi yenile
+    setTimeout(() => {
+      loadOrders(true);
+    }, 1000);
+
   }catch(e){
     toast("Gönderim hatası");
   }finally{
     setTimeout(()=>busy.kargola.delete(key), 20000);
   }
 }
+
 
 async function printBarcode(){
   const ok = await confirmModal({
@@ -796,53 +810,81 @@ async function printBarcode(){
 /* ============================================================
    İPTAL / GERİ AL
 ============================================================ */
-function openCancelForm(){
-  document.getElementById("cancelForm").style.display = "block";
-  document.getElementById("actionButtons").style.display = "none";
-}
 
 function cancelCancelForm(){
   document.getElementById("cancelForm").style.display = "none";
   document.getElementById("actionButtons").style.display = "flex";
 }
+
+async function openCancelForm() {
+
+  const codeRaw = selectedOrder?.shipmentStatusCode;
+  let isShipped = false;
+
+  if (codeRaw === null || codeRaw === undefined || codeRaw === "" || codeRaw === "0") {
+    isShipped = false;
+  } else {
+    const num = Number(codeRaw);
+    isShipped = Number.isInteger(num) && num >= 1 && num <= 9;
+  }
+
+  // 🚨 Kargolanmışsa → daha form açılmadan uyarı ver!
+  if (isShipped) {
+    const ok = await confirmModal({
+      title: "Kargolanmış Siparişi İptal Et",
+      text: `Bu sipariş kargoya gönderilmiş durumda.
+İptal sonucu ek ücret çıkabilir.
+
+Devam etmek istiyor musunuz?`,
+      confirmText: "Devam Et",
+      cancelText: "Vazgeç"
+    });
+
+    if (!ok) return; // vazgeçerse form açma
+  }
+
+  // 🟢 Kargolanmamışsa veya onay verildiyse → formu aç
+  document.getElementById("cancelForm").style.display = "block";
+  document.getElementById("actionButtons").style.display = "none";
+}
+
+
+
 /* ============================================================
    KARGOLANMIŞ İPTAL
 ============================================================ */
 
-
 async function confirmCancel() {
-
-  const isShipped = !!selectedOrder.shipmentStatusCode;
-
-  const modalOk = await confirmModal({
-    title: isShipped 
-      ? "Kargolanmış Siparişi İptal Et"
-      : "Siparişi İptal Et",
-
-    text: isShipped
-      ? `Bu sipariş kargo firmasına gönderilmiş durumda.
-İptal işlemi sonucunda kargo firması tarafından ek ücretler talep edilebilir.
-
-İptal Nedeni (zorunlu)`
-      : `Bu sipariş henüz kargoya verilmemiş.
-
-İptal Nedeni (zorunlu)`,
-
-    confirmText: "İptal Et",
-    cancelText: "Vazgeç"
-  });
-
-  if (!modalOk) return;
 
   const reason = document.getElementById("iptalInput").value.trim();
   if (!reason) return toast("İptal nedeni gerekli");
 
-  await fetch(WH_IPTAL, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ ...selectedOrder, reason })
-  });
+  const codeRaw = selectedOrder?.shipmentStatusCode;
+  let isShipped = false;
 
+  if (!codeRaw || codeRaw === "0") {
+    isShipped = false;
+  } else {
+    const num = Number(codeRaw);
+    isShipped = Number.isInteger(num) && num >= 1 && num <= 9;
+  }
+
+  // 🚫 BU FONKSİYONDA ALERT / POPUP KESİNLİKLE OLMAYACAK.
+
+  // — Webhook —
+  if (WH_IPTAL) {
+    try {
+      await fetch(WH_IPTAL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...selectedOrder, reason, isShipped })
+      });
+    } catch {
+      toast("İptal webhook gönderilemedi.");
+    }
+  }
+
+  // — DB Güncelle —
   await db.from(TABLE).update({
     kargo_durumu: "İptal",
     iptal_nedeni: reason,
@@ -853,6 +895,8 @@ async function confirmCancel() {
   closeModal();
   loadOrders(true);
 }
+
+
 
 
 async function restoreOrder(){
@@ -873,7 +917,8 @@ async function restoreOrder(){
 
   toast("Sipariş geri alındı");
   closeModal();
-  loadOrders(true);
+
+  setTimeout(() => loadOrders(true), 1000);
 }
 
 /* ============================================================
